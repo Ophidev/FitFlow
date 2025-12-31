@@ -68,7 +68,9 @@ graph TD
 
 ## 📐 Low-Level Design (LLD)
 
-### **1️⃣ Users Collection**
+### **Database Design**
+
+#### **1️⃣ Users Collection**
 
 Stores user fitness profile:
 
