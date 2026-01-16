@@ -77,13 +77,15 @@ Stores user fitness profile:
 ```
 {
   _id,
-  name,
+  firstName,
+  lastName,
   email,
   password,
+  profilePicture,
   age,
   height,
   weight,
-  goal,  // muscle_gain, fat_loss, strength, stay_fit
+  goal,  // muscle_gain, fat_loss, strength
   createdAt,
   updatedAt
 }
@@ -115,7 +117,7 @@ Stores exercises inside each workout day.
 {
   _id,
   userId,
-  dayId,
+  workoutDayId,
   exerciseName,
   imageUrl,
   sets,
@@ -135,7 +137,7 @@ Stores daily workout results.
 {
   _id,
   userId,
-  dayId,
+  workoutDayId,
   date,
   totalExercises,
   totalSetsCompleted,
@@ -145,7 +147,7 @@ Stores daily workout results.
 
 ---
 
-### **5️⃣ SetLogs Collection (Optional)**
+### **5️⃣ SetLogs Collection**
 
 Stores each set-level tracking.
 
@@ -178,8 +180,8 @@ Stores each set-level tracking.
 
 | Method | Endpoint | Description  |
 | ------ | -------- | ------------ |
-| GET    | /profile | Get profile  |
-| PATCH  | /profile | Edit profile |
+| GET    | /profile/view | Get profile  |
+| PATCH  | /profile/edit | Edit profile |
 
 ---
 
