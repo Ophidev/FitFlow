@@ -25,7 +25,7 @@ const validateEditProfileData = (req) => {
     "goal",
   ];
 
-  const isEditAllowed = Object.keys(req.body).every((field) => allowedEditFields.included(field));
+  const isEditAllowed = Object.keys(req.body).every((field) => allowedEditFields.includes(field));
 
   return isEditAllowed;
 };
