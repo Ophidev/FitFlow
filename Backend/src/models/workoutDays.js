@@ -9,7 +9,11 @@ const workoutDaysSchema = new mongoose.Schema({
     },
     title : {
         type: String,
-        required: true
+        required: true,
+        minlength: 2,
+        maxlength: 60,
+        trim: true,
+        lowercase: true,
     },
     
 }, {timestamps: true});

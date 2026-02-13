@@ -162,6 +162,25 @@ Stores each set-level tracking.
 }
 ```
 
+
+---
+
+### **6️⃣ WorkoutSchedule Collection**
+
+This will map weekday → workoutDay
+
+```
+{
+  _id,
+  userId,
+  weekday,      // "monday", "tuesday"
+  workoutDayId,
+  createdAt,
+  updatedAt
+}
+```
+
+
 ---
 
 ## 🔗 API Endpoints
@@ -203,6 +222,18 @@ Stores each set-level tracking.
 | GET    | /exercise/:dayId | Get exercises for a day |
 | PATCH  | /exercise/:id    | Update exercise         |
 | DELETE | /exercise/:id    | Delete exercise         |
+
+---
+
+### **Schedule Router**
+
+| Method | Endpoint             | Description               |
+| ------ | -------------------- | ------------------------- |
+| POST   | `/schedule/set`      | Assign workout to weekday |
+| GET    | `/schedule/view`     | Get weekly schedule       |
+| PATCH  | `/schedule/update`   | Update mapping            |
+| DELETE | `/schedule/:weekday` | Remove schedule           |
+
 
 ---
 
