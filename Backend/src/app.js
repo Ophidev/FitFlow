@@ -10,10 +10,12 @@ app.use(cookieParser());
 
 const authRouter = require("../src/routes/authRouter.js");
 const profileRouter = require("../src/routes/profileRouter.js");
+const workoutDayRouter = require("../src/routes/workoutDayRouter.js");
 
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
+app.use("/", workoutDayRouter);
 
 connectDB()
     .then(() => {
