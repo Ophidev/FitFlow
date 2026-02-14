@@ -18,7 +18,7 @@ const exercisesSchema = new mongoose.Schema({
     },
     imageUrl : {
         type : String,
-        required : true,
+        // required : true,
         validate(value) {
             if(!validator.isURL(value)){
                 throw new Error("Invalid photo URL! : "+value);
