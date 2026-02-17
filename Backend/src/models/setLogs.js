@@ -9,7 +9,7 @@ const setLogsSchema = mongoose.Schema({
     },
     exerciseId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Exercise',
+        ref: 'Exercises',
         required: true
     },
     setNumber: {

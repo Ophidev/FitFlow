@@ -56,4 +56,21 @@ const validateEditExerciseData = (req) => {
   return isEditAllowed;
 };
 
-module.exports = { validateSignupData, validateEditProfileData, validateEditExerciseData };
+const validateWorkoutScheduleData = (req) => {
+
+  const allowededitFields = ['weekday', 'workoutDayId'];
+
+  const isEditAllowed = 
+    Object.keys(req.body)
+    .every((field) => allowededitFields.includes(field));
+
+  return isEditAllowed;
+
+}
+
+module.exports = { 
+  validateSignupData, 
+  validateEditProfileData, 
+  validateEditExerciseData,
+  validateWorkoutScheduleData,
+ };

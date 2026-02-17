@@ -231,8 +231,8 @@ This will map weekday → workoutDay
 | ------ | -------------------- | ------------------------- |
 | POST   | `/schedule/set`      | Assign workout to weekday |
 | GET    | `/schedule/view`     | Get weekly schedule       |
-| PATCH  | `/schedule/update`   | Update mapping            |
-| DELETE | `/schedule/:weekday` | Remove schedule           |
+| PATCH  | `/schedule/:id   `   | Update mapping            |
+| DELETE | `/schedule/:id     ` | Remove schedule           |
 
 
 ---
