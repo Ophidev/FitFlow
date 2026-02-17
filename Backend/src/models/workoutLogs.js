@@ -9,7 +9,7 @@ const workoutLogsSchema = new mongoose.Schema({
     },
     workoutDayId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'WorkoutDay',
+        ref: 'WorkoutDays',
         required: true
     },
     date: {

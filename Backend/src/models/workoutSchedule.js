@@ -1,4 +1,4 @@
-const mongoose = required("mongoose");
+const mongoose = require("mongoose");
 
 const workoutScheduleSchema = new mongoose.Schema({
 
@@ -9,8 +9,8 @@ const workoutScheduleSchema = new mongoose.Schema({
     },
 
     workoutDayId : {
-        type : mongoose.Schema.Types.ObjedId,
-        ref : 'WorkoutDay',
+        type : mongoose.Schema.Types.ObjectId,
+        ref : 'WorkoutDays',
         required : true,
     },
     
@@ -24,14 +24,21 @@ const workoutScheduleSchema = new mongoose.Schema({
             'monday', 
             'tuesday', 
             'wednesday', 
-            'thrusday', 
+            'thursday', 
             'friday', 
             'saturday', 
             'sunday'
         ],
     },
 
-}, {timestamp:true});
+}, {timestamps:true});
+
+// Ensures that each user can assign only ONE workout per weekday.
+// Same weekday is allowed for different users.
+workoutScheduleSchema.index(
+    {userId : 1, weekday : 1},
+    {unique : true}
+);
 
 const WorkoutSchedule = mongoose.model('WorkoutSchedule', workoutScheduleSchema);
 
