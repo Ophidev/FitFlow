@@ -16,22 +16,36 @@ const workoutLogsSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
+    startedAt: {
+        type: Date,
+        required: true
+    },
+    completedAt: {
+        type: Date,
+    },
+    totalDuration: {
+        type: Number, //seconds
+        default: 0
+    },
     totalExercises: {
         type: Number,
         required: true
     },
     totalSetsCompleted: {
         type: Number,
-        required: true
+        default: 0
     },
     status : {
         type: String,
         required: true,
         trim: true,
-        enum: ['completed', 'incomplete', 'skipped']
+        enum: ["in_progress", "completed", "skipped"],
+        default: "in_progress"
     }
 
 }, {timestamps: true});
+
+workoutLogsSchema.index({ userId: 1, date: 1 });
 
 const WorkoutLog = mongoose.model('WorkoutLog', workoutLogsSchema);
 
