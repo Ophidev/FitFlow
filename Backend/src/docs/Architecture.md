@@ -257,8 +257,8 @@ Handles runtime workout state transitions.
 | Method | Endpoint             | Description                   |
 | ------ | -------------------- | ----------------------------- |
 | POST   | /workout/start       | Create in_progress WorkoutLog |
-| POST   | /workout/setStart    | Start a set (store startedAt) |
-| POST   | /workout/setComplete | Complete a set & log time     |
+| POST   | /workout/set/start    | Start a set (store startedAt) |
+| POST   | /workout/set/complete | Complete a set & log time     |
 | POST   | /workout/complete    | Mark workout completed        |
 
 ---
