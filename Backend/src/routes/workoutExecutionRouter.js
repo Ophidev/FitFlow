@@ -69,7 +69,8 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
             activeWorkout.status = "skipped";
             activeWorkout.completedAt = now;
             activeWorkout.totalDuration = 
-                Math.floor((now - activeWorkout.startedAt) / 1000);
+                Math.floor((now - activeWorkout.startedAt) / 1000); 
+                // convert elapsed time ms → seconds (rounded down)
 
                 await activeWorkout.save();
         }
@@ -116,6 +117,8 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
         const loggedInUser = req.user;
         const {workoutLogId, exerciseId, setNumber} = req.body;
 
+        console.log("🎂 workoutLogId : ", workoutLogId);
+        console.log("🎂 exerId : ", exerciseId);
         // 1 validating active workout log
         const activeWorkoutLog = await WorkoutLog.findOne({
             _id: workoutLogId,
@@ -151,6 +154,7 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
 
         // 4 prevent duplicate same set
         const existingSet = await SetLogs.findOne({
+            userId: loggedInUser._id,
             workoutLogId,
             exerciseId,
             setNumber
@@ -163,6 +167,8 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
         }
 
        // 5 Prevent multiple active sets
+       /* Check if there is any set in this workout that has started but not completed
+          If found, block starting a new set to prevent multiple active sets */
         const activeSet = await SetLogs.findOne({
             workoutLogId,
             userId: loggedInUser._id,
