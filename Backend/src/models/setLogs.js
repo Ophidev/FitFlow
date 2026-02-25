@@ -23,15 +23,12 @@ const setLogsSchema = mongoose.Schema({
     },
     startedAt: {
         type: Date,
-        required: true
     },
     completedAt: {
         type: Date,
-        required: true
     },
     timeTaken: {
         type: Number, //seconds
-        required: true
     },
     
 },{timestamps: true});
