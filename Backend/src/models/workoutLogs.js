@@ -45,7 +45,14 @@ const workoutLogsSchema = new mongoose.Schema({
 
 }, {timestamps: true});
 
-workoutLogsSchema.index({ userId: 1, date: 1 });
+// Only one active workout
+workoutLogsSchema.index(
+  { userId: 1},
+  { unique: true, partialFilterExpression: { status: "in_progress" } }
+);
+
+// Add compound index (userId, status) in WorkoutLogs to optimize active workout queries
+workoutLogsSchema.index({ userId: 1, status: 1 });
 
 const WorkoutLog = mongoose.model('WorkoutLog', workoutLogsSchema);
 

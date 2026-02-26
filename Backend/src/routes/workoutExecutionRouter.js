@@ -72,10 +72,16 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
                 Math.floor((now - activeWorkout.startedAt) / 1000); 
                 // convert elapsed time ms → seconds (rounded down)
 
-                await activeWorkout.save();
+            await activeWorkout.save();
+
+            // Now handling set which is started but never finished because workoutDay auto skip
+
+            //1 find all set of this workout
+
+
         }
 
-        // fetch exeercises for new workout
+        // fetch exercises for new workout
         const allExercises = await Exercises.find({
             workoutDayId: workoutDayId,
             userId: loggedInUser._id,
@@ -199,6 +205,10 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
     } catch(err) {
         res.status(400).send("ERROR : inside /workout/set/start "+ err.message);
     }
+
+});
+
+workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) => {
 
 });
 
