@@ -76,9 +76,22 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
 
             // Now handling set which is started but never finished because workoutDay auto skip
 
-            //1 find all set of this workout
+            // 1 find all set of this workout
+            const IncompleteSets = await SetLogs.find({
+                workoutLogId: activeWorkout._id,
+                userId: loggedInUser._id,
+                completedAt: { $exists: false }
+            });
 
+            // 2 updating incomplete sets
+            for (const set of IncompleteSets) {
+                const timeTaken = Math.floor((now - set.startedAt) / 1000);
 
+                set.completedAt = now;
+                set.timeTaken = timeTaken;
+
+                await set.save();
+            }
         }
 
         // fetch exercises for new workout
