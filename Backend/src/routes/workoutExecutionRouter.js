@@ -223,6 +223,67 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
 
 workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) => {
 
+    try {
+
+        const loggedInUser = req.user;
+        const {workoutLogId, exerciseId, setNumber} = req.body;
+
+        // flow of /workout/set/complete
+        /*
+        Validate workoutLog is active
+        Validate exercise belongs to workout
+        Find the active set
+        Mark it completed
+        Calculate time taken
+        Update workout progress
+        */
+
+        // 1 Validate workout is active 
+        const activeWorkoutLog = await WorkoutLog.findOne({
+            _id: workoutLogId,
+            userId: loggedInUser._id,
+            status: "in_progress"
+        });
+
+        if(!activeWorkoutLog) {
+            return res.status(404).json({
+                 message: "!No active workout!!" 
+            });
+        }
+
+        // 2 Validate exercise belongs to workout
+        const exercise = await Exercises.findOne({
+            _id: exerciseId,
+            workoutDayId: activeWorkoutLog?.workoutDayId,
+            userId: loggedInUser._id
+        });
+
+        if(!exercise) {
+            return res.status(404).json({
+                 message: "!Exercise is not found for active workout Log!!" 
+            });
+        }
+
+        // 3 Find the active set
+        const activeSet = await SetLogs.findOne({
+            userId: loggedInUser,
+            workoutLogId: activeWorkoutLog?._id,
+            exerciseId: exercise?.id,
+            setNumber: setNumber,
+            completedAt: { $exists: false },
+        });
+
+        if (!activeSet) {
+            res.send(404).json({
+                message: "Set not found for active exercise"
+            })
+        }
+        
+    } catch(err){
+
+        res.status(400).send("ERROR inside /workout/set/complete : ", err.message);
+    }
+
 });
 
 module.exports = workoutExecutionRouter;
