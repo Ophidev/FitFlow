@@ -77,14 +77,14 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
             // Now handling set which is started but never finished because workoutDay auto skip
 
             // 1 find all set of this workout
-            const IncompleteSets = await SetLogs.find({
+            const incompleteSets = await SetLogs.find({
                 workoutLogId: activeWorkout._id,
                 userId: loggedInUser._id,
                 completedAt: { $exists: false }
             });
 
             // 2 updating incomplete sets
-            for (const set of IncompleteSets) {
+            for (const set of incompleteSets) {
                 const timeTaken = Math.floor((now - set.startedAt) / 1000);
 
                 set.completedAt = now;
@@ -100,7 +100,7 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
             userId: loggedInUser._id,
         });
 
-        if (allExercises.length === 0) {
+        if (!allExercises.length) {
             return res.status(400).send("!No Exercises found for workout day");
         }
 
@@ -230,12 +230,13 @@ workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) =
 
         // flow of /workout/set/complete
         /*
-        Validate workoutLog is active
-        Validate exercise belongs to workout
-        Find the active set
-        Mark it completed
-        Calculate time taken
-        Update workout progress
+        1: Validate workoutLog is active
+        2: Validate exercise belongs to workout
+        3: Validate setNumber range
+        4: Find the active set
+        5: Calculate time taken
+        6: complete the set
+        7: Update workout progress
         */
 
         // 1 Validate workout is active 
@@ -244,6 +245,8 @@ workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) =
             userId: loggedInUser._id,
             status: "in_progress"
         });
+
+        console.log("✅",activeWorkoutLog);
 
         if(!activeWorkoutLog) {
             return res.status(404).json({
@@ -264,21 +267,57 @@ workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) =
             });
         }
 
-        // 3 Find the active set
-        const activeSet = await SetLogs.findOne({
-            userId: loggedInUser,
-            workoutLogId: activeWorkoutLog?._id,
-            exerciseId: exercise?.id,
+        // 3️ Validate setNumber range
+        if (setNumber < 1 || setNumber > exercise.sets) {
+            return res.status(400).json({
+                message: "Invalid set number"
+            });
+        }
+
+        // 4 Find the active set
+        const setLog = await SetLogs.findOne({
+            userId: loggedInUser._id,
+            workoutLogId: activeWorkoutLog._id,
+            exerciseId: exercise._id,
             setNumber: setNumber,
-            completedAt: { $exists: false },
         });
 
-        if (!activeSet) {
-            res.send(404).json({
-                message: "Set not found for active exercise"
+        // Case 1 — Set Not Started Yet
+        if (!setLog) {
+            return res.status(404).json({
+                message: "Set not started yet"
             })
         }
         
+        // Case 2 — Set Already Completed
+        if (setLog.completedAt) {
+            return res.status(409).json({
+                message: "Set already completed"
+            });
+        }
+
+        // 5 Calculate time taken
+        const now = new Date();
+
+        const timeTaken = Math.floor((now - setLog.startedAt) / 1000);
+
+        setLog.completedAt = now;
+        setLog.timeTaken = timeTaken;
+
+        // 6 update setLog
+        await setLog.save();
+
+        // 7 update workout progress
+        await WorkoutLog.findByIdAndUpdate(
+            workoutLogId,
+            {$inc: { totalSetsCompleted: 1}}
+        );
+
+        return res.status(200).json({
+            message: "Set completed successfully",
+            setLog
+        });
+
     } catch(err){
 
         res.status(400).send("ERROR inside /workout/set/complete : ", err.message);

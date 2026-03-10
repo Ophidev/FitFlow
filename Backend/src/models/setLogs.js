@@ -33,7 +33,10 @@ const setLogsSchema = mongoose.Schema({
     
 },{timestamps: true});
 
-setLogsSchema.index({ workoutLogId: 1 });
+setLogsSchema.index(
+  { workoutLogId: 1, exerciseId: 1, setNumber: 1 },
+  { unique: true }
+);
 
 
 const SetLogs = mongoose.model('SetLogs', setLogsSchema);
