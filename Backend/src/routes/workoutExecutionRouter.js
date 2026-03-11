@@ -246,7 +246,6 @@ workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) =
             status: "in_progress"
         });
 
-        console.log("✅",activeWorkoutLog);
 
         if(!activeWorkoutLog) {
             return res.status(404).json({
@@ -257,7 +256,7 @@ workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) =
         // 2 Validate exercise belongs to workout
         const exercise = await Exercises.findOne({
             _id: exerciseId,
-            workoutDayId: activeWorkoutLog?.workoutDayId,
+            workoutDayId: activeWorkoutLog.workoutDayId,
             userId: loggedInUser._id
         });
 
@@ -320,7 +319,92 @@ workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) =
 
     } catch(err){
 
-        res.status(400).send("ERROR inside /workout/set/complete : ", err.message);
+        res.status(400).send("ERROR inside /workout/set/complete : "+ err.message);
+    }
+
+});
+
+workoutExecutionRouter.post("/workout/complete", userAuth, async (req, res) => {
+
+    try {
+
+        // STEP 1: Get logged-in user and workoutLogId from request
+        const loggedInUser = req.user;
+        const { workoutLogId } = req.body;
+
+
+        // STEP 2: Validate that the workout is currently active
+        // Only an "in_progress" workout can be completed
+        const activeWorkoutLog = await WorkoutLog.findOne({
+            _id: workoutLogId,
+            userId: loggedInUser._id,
+            status: "in_progress"
+        });
+
+        // If no active workout found → return error
+        if (!activeWorkoutLog) {
+            return res.status(404).json({
+                message: "No active workout found"
+            });
+        }
+
+
+        // STEP 3: Get current time (this will be used for completion and duration)
+        const now = new Date();
+
+
+        // STEP 4: Find any sets that were started but never completed
+        // These sets must be automatically finished when workout completes
+        const runningSets = await SetLogs.find({
+            workoutLogId: workoutLogId,
+            userId: loggedInUser._id,
+            completedAt: { $exists: false }
+        });
+
+
+        // STEP 5: Complete all unfinished sets
+        for (const set of runningSets) {
+
+            // Calculate time taken for the set
+            const timeTaken = Math.floor((now - set.startedAt) / 1000);
+
+            // Update set fields
+            set.completedAt = now;
+            set.timeTaken = timeTaken;
+
+            // Save updated set
+            await set.save();
+        }
+
+
+        // STEP 6: Calculate total workout duration
+        // Duration = current time - workout start time in sec
+        const totalDuration = Math.floor(
+            (now - activeWorkoutLog.startedAt) / 1000
+        );
+
+
+        // STEP 7: Update workout log to mark workout as completed
+        activeWorkoutLog.completedAt = now;
+        activeWorkoutLog.totalDuration = totalDuration;
+        activeWorkoutLog.status = "completed";
+
+        await activeWorkoutLog.save();
+
+
+        // STEP 8: Return success response with workout summary
+        return res.status(200).json({
+            message: "Workout completed successfully",
+            workoutLog: activeWorkoutLog
+        });
+
+    } catch (err) {
+
+        res.status(400).json({
+            error: "ERROR inside /workout/complete",
+            message: err.message
+        });
+
     }
 
 });
