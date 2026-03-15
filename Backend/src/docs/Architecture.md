@@ -1,6 +1,8 @@
+---
+
 # 🏋️‍♂️ FitFlow — Architecture, HLD, LLD & Folder Structure
 
-**Tagline:** Plan your workouts. Track your progress. Stay consistent.
+**Tagline:** Plan your workouts. Execute with discipline. Track your progress. Stay consistent.
 
 ---
 
@@ -11,6 +13,7 @@
 * React + Vite
 * TailwindCSS / Material UI
 * Axios (REST API calls)
+* Local Timer Logic (Set + Workout duration)
 * Optional: Service Workers / Notifications
 
 ### **Backend (Server / Application Layer)**
@@ -18,11 +21,12 @@
 * Node.js + Express.js
 * MongoDB (Database)
 * JWT (Authentication)
+* Business Logic Layer (Workout Execution State Management)
 
 **Microservices:**
 
-> Single backend service is enough (scope manageable)
-> Frontend is a client application, not a microservice
+> Single backend service (monolithic architecture) — clean & scalable
+> Frontend is a client application
 
 ---
 
@@ -33,6 +37,8 @@
 * Shows workout planner UI
 * Manages workout day & exercise management
 * Handles live workout timer UI
+* Manages set-level timer
+* Sends execution events (start, setComplete, complete)
 * Shows logs & history
 * Calls backend APIs
 
@@ -40,12 +46,21 @@
 
 * Authentication & user handling
 * Workout day & exercise CRUD logic
-* Live workout logging
+* Workout execution state management
+* Time validation & duration calculation
+* Workout logging & analytics foundation
 * History & suggestion logic
 
 ### **Database Layer**
 
-* Collections: Users, WorkoutDays, Exercises, WorkoutLogs, SetLogs
+* Collections:
+
+  * Users
+  * WorkoutDays
+  * Exercises
+  * WorkoutSchedule
+  * WorkoutLogs
+  * SetLogs
 
 ---
 
@@ -53,16 +68,16 @@
 
 ```mermaid
 graph TD
-    A[Frontend - React] -->|REST API| B[Backend - Node.js + Express]
+    A[Frontend - React] -->|REST API| B[Backend - Express API]
     B --> C[MongoDB Database]
 ```
 
 ### **HLD Summary:**
 
-* Frontend calls backend using REST APIs
-* Backend handles authentication + business logic
-* MongoDB stores all core data
-* Single backend application — simple & scalable
+* Frontend manages UI & timers
+* Backend manages authentication + business rules + execution state
+* MongoDB stores structured workout & execution logs
+* Single backend application — simple, scalable & maintainable
 
 ---
 
@@ -70,9 +85,9 @@ graph TD
 
 ### **Database Design**
 
-#### **1️⃣ Users Collection**
+---
 
-Stores user fitness profile:
+### **1️⃣ Users Collection**
 
 ```
 {
@@ -95,8 +110,6 @@ Stores user fitness profile:
 
 ### **2️⃣ WorkoutDays Collection**
 
-Stores custom workout day names like Chest Day, Leg Day etc.
-
 ```
 {
   _id,
@@ -110,8 +123,6 @@ Stores custom workout day names like Chest Day, Leg Day etc.
 ---
 
 ### **3️⃣ Exercises Collection**
-
-Stores exercises inside each workout day.
 
 ```
 {
@@ -129,45 +140,9 @@ Stores exercises inside each workout day.
 
 ---
 
-### **4️⃣ WorkoutLogs Collection**
+### **4️⃣ WorkoutSchedule Collection**
 
-Stores daily workout results.
-
-```
-{
-  _id,
-  userId,
-  workoutDayId,
-  date,
-  totalExercises,
-  totalSetsCompleted,
-  status // completed / skipped
-}
-```
-
----
-
-### **5️⃣ SetLogs Collection**
-
-Stores each set-level tracking.
-
-```
-{
-  _id,
-  userId,
-  exerciseId,
-  setNumber,
-  completedAt,
-  timeTaken
-}
-```
-
-
----
-
-### **6️⃣ WorkoutSchedule Collection**
-
-This will map weekday → workoutDay
+Maps weekday → workoutDay
 
 ```
 {
@@ -180,6 +155,45 @@ This will map weekday → workoutDay
 }
 ```
 
+---
+
+### **5️⃣ WorkoutLogs Collection**
+
+Stores runtime workout session.
+
+```
+{
+  _id,
+  userId,
+  workoutDayId,
+  date,
+  startedAt,
+  completedAt,
+  totalDuration,        // calculated at completion
+  totalExercises,
+  totalSetsCompleted,
+  status  // in_progress / completed / skipped
+}
+```
+
+---
+
+### **6️⃣ SetLogs Collection**
+
+Stores per-set execution tracking.
+
+```
+{
+  _id,
+  userId,
+  workoutLogId,
+  exerciseId,
+  setNumber,
+  startedAt,
+  completedAt,
+  timeTaken   // seconds or ms
+}
+```
 
 ---
 
@@ -197,8 +211,8 @@ This will map weekday → workoutDay
 
 ### **ProfileRouter**
 
-| Method | Endpoint | Description  |
-| ------ | -------- | ------------ |
+| Method | Endpoint      | Description  |
+| ------ | ------------- | ------------ |
 | GET    | /profile/view | Get profile  |
 | PATCH  | /profile/edit | Edit profile |
 
@@ -227,27 +241,29 @@ This will map weekday → workoutDay
 
 ### **Schedule Router**
 
-| Method | Endpoint             | Description               |
-| ------ | -------------------- | ------------------------- |
-| POST   | `/schedule/set`      | Assign workout to weekday |
-| GET    | `/schedule/view`     | Get weekly schedule       |
-| PATCH  | `/schedule/:id   `   | Update mapping            |
-| DELETE | `/schedule/:id     ` | Remove schedule           |
-
-
----
-
-### **Workout Execution APIs**
-
-| Method | Endpoint             | Description           |
-| ------ | -------------------- | --------------------- |
-| POST   | /workout/start       | Start workout session |
-| POST   | /workout/setComplete | Mark set complete     |
-| POST   | /workout/complete    | Finish workout        |
+| Method | Endpoint       | Description               |
+| ------ | -------------- | ------------------------- |
+| POST   | /schedule/set  | Assign workout to weekday |
+| GET    | /schedule/view | Get weekly schedule       |
+| PATCH  | /schedule/:id  | Update mapping            |
+| DELETE | /schedule/:id  | Remove schedule           |
 
 ---
 
-### **History APIs**
+### **Workout Execution Router**
+
+Handles runtime workout state transitions.
+
+| Method | Endpoint             | Description                   |
+| ------ | -------------------- | ----------------------------- |
+| POST   | /workout/start       | Create in_progress WorkoutLog |
+| POST   | /workout/set/start    | Start a set (store startedAt) |
+| POST   | /workout/set/complete | Complete a set & log time     |
+| POST   | /workout/complete    | Mark workout completed        |
+
+---
+
+### **History Router**
 
 | Method | Endpoint            | Description           |
 | ------ | ------------------- | --------------------- |
@@ -278,9 +294,8 @@ FitFlow/
 │
 ├── src/
 │   │   ApiList.md
-│   │   app.js                 # Backend entry
-│   │   notes.md
-│
+│   │   app.js
+│   │
 │   ├── config/
 │   │       database.js
 │
@@ -291,22 +306,23 @@ FitFlow/
 │   │       user.js
 │   │       workoutDay.js
 │   │       exercise.js
+│   │       workoutSchedule.js
 │   │       workoutLog.js
 │   │       setLog.js
 │
 │   ├── routes/
 │   │       authRouter.js
 │   │       profileRouter.js
-│   │       workoutRouter.js
+│   │       workoutDayRouter.js
 │   │       exerciseRouter.js
+│   │       scheduleRouter.js
+│   │       workoutExecutionRouter.js
 │   │       historyRouter.js
 │
 │   └── utils/
 │           validation.js
 │
 ├── .env
-├── .gitignore
-├── package-lock.json
 ├── package.json
 └── README.md
 ```
@@ -320,8 +336,18 @@ FitFlow/
 * Notifications
 * Gamification badges
 * AI workout suggestion (future)
+* MongoDB transactions for execution integrity
 
 ---
 
-**🎯 Summary:**
-FitFlow is a discipline-focused fitness companion — structured architecture, clean backend, powerful UI, and scalable design.
+# 🎯 Summary
+
+FitFlow is a discipline-focused structured workout system:
+
+* Planning layer (WorkoutDays + Exercises)
+* Scheduling layer (WorkoutSchedule)
+* Execution layer (WorkoutLogs + SetLogs)
+* Analytics-ready foundation
+* Clean backend state management
+
+---

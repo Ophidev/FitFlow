@@ -7,6 +7,11 @@ const setLogsSchema = mongoose.Schema({
         ref: 'User',
         required: true
     },
+    workoutLogId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "WorkoutLog",
+        required: true
+    },
     exerciseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Exercises',
@@ -16,17 +21,23 @@ const setLogsSchema = mongoose.Schema({
         type: Number,
         required: true
     },
+    startedAt: {
+        type: Date,
+    },
     completedAt: {
         type: Date,
-        required: true
     },
     timeTaken: {
-        type: Number,
-        required: true
+        type: Number, //seconds
     },
     
-
 },{timestamps: true});
+
+setLogsSchema.index(
+  { workoutLogId: 1, exerciseId: 1, setNumber: 1 },
+  { unique: true }
+);
+
 
 const SetLogs = mongoose.model('SetLogs', setLogsSchema);
 
