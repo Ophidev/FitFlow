@@ -14,7 +14,7 @@ workoutDayRouter.post("/workout/day", userAuth, async (req, res) => {
     }
 
     const workoutDaysInstance = new WorkoutDays({
-      userId: loggedInUser,
+      userId: loggedInUser._id,
       title,
     });
 

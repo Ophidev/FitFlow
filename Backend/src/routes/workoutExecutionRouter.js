@@ -7,44 +7,52 @@ const SetLogs = require("../models/setLogs.js");
 
 const workoutExecutionRouter = express.Router();
 
-workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
-
+workoutExecutionRouter.post("/workout/start", userAuth, async (req, res) => {
     try {
 
-        //data need
-        const loggedInUser = req.user; //current loggedInUser
-        const { workoutDayId } = req.body; // from frontend
+        // STEP 1: Get user & input
+        const loggedInUser = req.user;
+        const { workoutDayId } = req.body;
 
-        // validate workout day ownership
+        // STEP 2: Validate workout day ownership
         const workoutDay = await WorkoutDays.findOne({
             _id: workoutDayId,
             userId: loggedInUser._id,
         });
-        
+
         if (!workoutDay) {
-            throw new Error ("!! Workout day not found !!!");
+            throw new Error("Workout day not found");
         }
 
-        // prepare today's date
+        // STEP 3: Prepare date & time
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0); // normalize to start of day
 
-        const now = new Date(); //current date and time
+        const now = new Date(); // current timestamp
 
-        // check for active workout
+        // STEP 4: Check for existing active workout
         const activeWorkout = await WorkoutLog.findOne({
             userId: loggedInUser._id,
             status: "in_progress"
-        }).sort({ createdAt: -1});
+        }).sort({ createdAt: -1 });
 
-        // Active workout exists
+
+        // STEP 5: Handle existing active workout
         if (activeWorkout) {
 
             const activeDate = new Date(activeWorkout.date);
             activeDate.setHours(0, 0, 0, 0);
 
-            // CASE A - same day -> resume
+            // CASE A: Same day → Resume
             if (activeDate.getTime() === today.getTime()) {
+
+                // OPTIONAL SAFETY CHECK:
+                // Prevent starting different workout on same day
+                if (activeWorkout.workoutDayId.toString() !== workoutDayId) {
+                    return res.status(400).json({
+                        message: "Finish current workout before starting another"
+                    });
+                }
 
                 const exercisesList = await Exercises.find({
                     workoutDayId: activeWorkout.workoutDayId,
@@ -65,25 +73,24 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
                 });
             }
 
-            // CASE B - Old day -> auto skip
+            // CASE B: Old day → Auto skip
             activeWorkout.status = "skipped";
             activeWorkout.completedAt = now;
-            activeWorkout.totalDuration = 
-                Math.floor((now - activeWorkout.startedAt) / 1000); 
-                // convert elapsed time ms → seconds (rounded down)
+
+            // Calculate total duration (seconds)
+            activeWorkout.totalDuration = Math.floor(
+                (now - activeWorkout.startedAt) / 1000
+            );
 
             await activeWorkout.save();
 
-            // Now handling set which is started but never finished because workoutDay auto skip
-
-            // 1 find all set of this workout
+            // STEP 6: Complete unfinished sets
             const incompleteSets = await SetLogs.find({
                 workoutLogId: activeWorkout._id,
                 userId: loggedInUser._id,
                 completedAt: { $exists: false }
             });
 
-            // 2 updating incomplete sets
             for (const set of incompleteSets) {
                 const timeTaken = Math.floor((now - set.startedAt) / 1000);
 
@@ -94,16 +101,17 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
             }
         }
 
-        // fetch exercises for new workout
+        // STEP 7: Fetch exercises for new workout
         const allExercises = await Exercises.find({
             workoutDayId: workoutDayId,
             userId: loggedInUser._id,
         });
 
         if (!allExercises.length) {
-            return res.status(400).send("!No Exercises found for workout day");
+            return res.status(400).send("No exercises found for this workout day");
         }
 
+        // STEP 8: Create new workout log
         const workoutLogInstance = new WorkoutLog({
             userId: loggedInUser._id,
             workoutDayId,
@@ -116,62 +124,74 @@ workoutExecutionRouter.post("/workout/start", userAuth, async (req,res) => {
 
         const savedWorkoutLogInstance = await workoutLogInstance.save();
 
+        // STEP 9: Return response
         res.status(201).json({
-            "message": "Workout Started",
-            "workoutLog": savedWorkoutLogInstance,
-            "exercisesList": allExercises,
-            "resume": false
+            message: "Workout started",
+            workoutLog: savedWorkoutLogInstance,
+            exercisesList: allExercises,
+            resume: false
         });
 
-    } catch(err) {
-        res.status(400).send("ERROR inside /workout/start : "+ err.message);
+    } catch (err) {
+        res.status(400).send("ERROR inside /workout/start : " + err.message);
     }
-
 });
 
-workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
-
+workoutExecutionRouter.post("/workout/set/start", userAuth, async (req, res) => {
+    
+    /*
+    User clicks start set
+       ↓
+    Check workout active
+       ↓
+    Check exercise valid
+       ↓
+    Check setNumber valid
+       ↓
+    Check if already exists
+       ↓
+       → resume OR block OR create
+    */
     try {
 
+        // Step 1: Get user and request data
         const loggedInUser = req.user;
-        const {workoutLogId, exerciseId, setNumber} = req.body;
+        const { workoutLogId, exerciseId, setNumber } = req.body;
 
-        console.log("🎂 workoutLogId : ", workoutLogId);
-        console.log("🎂 exerId : ", exerciseId);
-        // 1 validating active workout log
+        // Step 2: Validate active workout log
         const activeWorkoutLog = await WorkoutLog.findOne({
             _id: workoutLogId,
             userId: loggedInUser._id,
             status: "in_progress",
         });
 
-        if(!activeWorkoutLog) {
-            return res.status(404).json({ 
-                message: "!No new Active workout Log found !!" 
+        if (!activeWorkoutLog) {
+            return res.status(404).json({
+                message: "No active workout found"
             });
         }
 
-        // 2 validate exercise belongs to this workout
+        // Step 3: Validate exercise belongs to this workout
         const exercise = await Exercises.findOne({
             _id: exerciseId,
-            workoutDayId: activeWorkoutLog?.workoutDayId,
-            userId: loggedInUser?._id
+            workoutDayId: activeWorkoutLog.workoutDayId,
+            userId: loggedInUser._id
         });
 
-        if(!exercise) {
-             return res.status(404).json({
-                 message: "!Exercise is not found for active workout Log!!" 
+        if (!exercise) {
+            return res.status(404).json({
+                message: "Exercise not found for this workout"
             });
         }
 
-        // 3️ Validate setNumber range
+        // Step 4: Validate setNumber range
         if (setNumber < 1 || setNumber > exercise.sets) {
             return res.status(400).json({
                 message: "Invalid set number"
             });
         }
 
-        // 4 prevent duplicate same set
+        // Step 5: Check if same set already exists
         const existingSet = await SetLogs.findOne({
             userId: loggedInUser._id,
             workoutLogId,
@@ -179,15 +199,23 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
             setNumber
         });
 
-        if (existingSet) {
-            return res.status(409).json({
-                message: "This set has already been started"
+        // If set already exists and not completed → resume instead of blocking
+        if (existingSet && !existingSet.completedAt) {
+            return res.status(200).json({
+                message: "Resuming set",
+                setLog: existingSet,
+                resume: true
             });
         }
 
-       // 5 Prevent multiple active sets
-       /* Check if there is any set in this workout that has started but not completed
-          If found, block starting a new set to prevent multiple active sets */
+        // If already completed → block
+        if (existingSet && existingSet.completedAt) {
+            return res.status(409).json({
+                message: "Set already completed"
+            });
+        }
+
+        // Step 6: Prevent multiple active sets
         const activeSet = await SetLogs.findOne({
             workoutLogId,
             userId: loggedInUser._id,
@@ -200,7 +228,7 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
             });
         }
 
-        // 6 Create new SetLog
+        // Step 7: Create new set log
         const newSetLog = await SetLogs.create({
             userId: loggedInUser._id,
             workoutLogId,
@@ -209,14 +237,15 @@ workoutExecutionRouter.post("/workout/set/start", userAuth, async (req,res) => {
             startedAt: new Date()
         });
 
+        // Step 8: Return response
         return res.status(201).json({
             message: "Set started successfully",
-            setLog: newSetLog
+            setLog: newSetLog,
+            resume: false
         });
 
-
-    } catch(err) {
-        res.status(400).send("ERROR : inside /workout/set/start "+ err.message);
+    } catch (err) {
+        res.status(400).send("ERROR : inside /workout/set/start " + err.message);
     }
 
 });
