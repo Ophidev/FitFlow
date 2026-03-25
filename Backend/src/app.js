@@ -13,12 +13,16 @@ const profileRouter = require("../src/routes/profileRouter.js");
 const workoutDayRouter = require("../src/routes/workoutDayRouter.js");
 const exerciseRouter = require("../src/routes/exerciseRouter.js");
 const scheduleRouter = require("../src/routes/scheduleRouter.js");
+const workoutExecutionRouter = require("../src/routes/workoutExecutionRouter.js");
+const historyRouter = require("../src/routes/historyRouter.js");
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", workoutDayRouter);
 app.use("/", exerciseRouter);
 app.use("/", scheduleRouter);
+app.use("/", workoutExecutionRouter);
+app.use("/", historyRouter);
 
 connectDB()
     .then(() => {

@@ -1,6 +1,7 @@
 const express = require("express");
 const userAuth = require("../middlewares/auth.js");
 const WorkoutSchedule = require("../models/workoutSchedule.js");
+const WorkoutDays = require("../models/workoutDays.js");
 const { validateWorkoutScheduleData } = require("../utils/validation.js");
 
 const scheduleRouter = express.Router();
@@ -14,6 +15,15 @@ scheduleRouter.post("/schedule/set", userAuth, async (req, res) => {
 
         if(!workoutDayId || !weekday) {
             throw new Error ("!Invalid request");
+        }
+
+        const workoutDay = await WorkoutDays.findOne({
+            _id: workoutDayId,
+            userId: loggedInUser._id
+        });
+
+        if (!workoutDay) {
+            throw new Error("Invalid workout day");
         }
 
         const workoutSchedule = await WorkoutSchedule.findOne({
