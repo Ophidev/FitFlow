@@ -994,7 +994,7 @@ const FinalCTASection = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-10">
-            <Link to="/signup" className="btn btn-primary btn-lg rounded-full">
+            <Link to="/login" className="btn btn-primary btn-lg rounded-full">
               Start Your Journey
               <ArrowRight size={18} />
             </Link>
@@ -1073,7 +1073,7 @@ const Home = () => {
                 className="flex flex-col sm:flex-row gap-4"
               >
                 <Link
-                  to="/signup"
+                  to="/login"
                   className="btn btn-primary btn-lg rounded-full"
                 >
                   Break The Cycle
