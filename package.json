@@ -1,0 +1,12 @@
+{
+  "name": "fitflow",
+  "private": true,
+  "scripts": {
+    "frontend": "npm run dev --prefix Frontend",
+    "backend": "npm run dev --prefix Backend",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
