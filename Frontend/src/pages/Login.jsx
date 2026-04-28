@@ -34,7 +34,7 @@ const Login = () => {
         console.log("res ✅: ", res);
 
         dispatch(addUser(res.data));
-        navigate("/home");
+        navigate("/");
 
     } catch (err) {
        setError(err?.response?.data || err.message || "Something went wrong!");
@@ -58,7 +58,7 @@ const Login = () => {
           { withCredentials: true}
         );
 
-        navigate("/home");
+        navigate("home");
         
     } catch (err) {
         setError(err?.response?.data || err.message || "Something went wrong!");
