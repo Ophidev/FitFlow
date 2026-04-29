@@ -1,11 +1,32 @@
 import React from "react";
 import Logo from "../assets/logoo.png";
-import { useSelector } from "react-redux";
-import { Link } from "react-router";
+import { useSelector, useDispatch } from "react-redux";
+import { Link, useNavigate} from "react-router";
+import axios from "axios";
+import { BASE_URL } from "../utils/constants";
+import { removeUser } from "../redux/userSlice";
 
 const Header = () => {
 
   const user = useSelector((state) => state.user);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try{
+
+      await axios.post(BASE_URL+"/logout",
+        {},
+        {withCredentials: true},
+      );
+
+      dispatch(removeUser());
+      navigate("/login");
+      
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
 
   return (
     <div className="navbar bg-base-100 shadow-sm border-2 border-base-300 text-base-content justify-between">
@@ -43,7 +64,7 @@ const Header = () => {
                 <a>Settings</a>
               </li>
               <li>
-                <a>Logout</a>
+                <a onClick={handleLogout}>Logout</a>
               </li>
             </ul>
           </div>

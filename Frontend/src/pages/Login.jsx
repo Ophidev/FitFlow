@@ -34,7 +34,7 @@ const Login = () => {
         console.log("res ✅: ", res);
 
         dispatch(addUser(res.data));
-        navigate("/");
+        navigate("/profile");
 
     } catch (err) {
        setError(err?.response?.data || err.message || "Something went wrong!");

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -17,6 +17,10 @@ import {
   HeartPulse,
   ChevronDown,
 } from "lucide-react";
+import axios from "axios";
+import { BASE_URL } from "../utils/constants";
+import { useDispatch } from "react-redux";
+import { addUser, removeUser } from "../redux/userSlice";
 
 // Animations
 const defaultViewport = { once: false, amount: 0.2 };
@@ -80,6 +84,7 @@ const goalOptions = [
 ];
 
 const Profile = () => {
+
   const [formData, setFormData] = useState({
     firstName: "Ayush",
     lastName: "bhatt",
@@ -92,19 +97,23 @@ const Profile = () => {
   });
 
   const [saved, setSaved] = useState(false);
+  
+  const dispatch = useDispatch();
 
   const fullName = useMemo(() => {
     return `${formData.firstName || ""} ${formData.lastName || ""}`.trim() || "Your Name";
   }, [formData.firstName, formData.lastName]);
 
   const bmi = useMemo(() => {
-    const heightM = Number(formData.height) / 100;
-    const weightKg = Number(formData.weight);
+    const heightM = Number(formData.height) / 100; // convert height from cm to m
+    const weightKg = Number(formData.weight); // convert weight to number.
     if (!heightM || !weightKg) return "--";
-    return (weightKg / (heightM * heightM)).toFixed(1);
+    return (weightKg / (heightM * heightM)).toFixed(1); //toFixed(1) keeps only 1 decimal place.
   }, [formData.height, formData.weight]);
 
   const profileCompletion = useMemo(() => {
+
+    //1. get Array of all fields.
     const fields = [
       formData.firstName,
       formData.lastName,
@@ -114,7 +123,11 @@ const Profile = () => {
       formData.weight,
       formData.goal,
     ];
+
+    //2. count non-empty fields.
     const completed = fields.filter((item) => item && String(item).trim() !== "").length;
+
+    //3. convert to percentage.
     return Math.round((completed / fields.length) * 100);
   }, [formData]);
 
@@ -124,16 +137,42 @@ const Profile = () => {
       ...prev,
       [field]: value,
     }));
+
+  /*
+    The square brackets [field] are not for arrays here —
+    they’re JavaScript’s computed property syntax for objects.
+    It means: "use the value of the variable field as the key" 
+    when setting a property on the object.
+  */
   };
 
-  const handleSave = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+
+  });
+
+const handleSave = async (e) => {
+  e.preventDefault();
+
+  try {
+    // Your API call goes here
+    const res = await axios.patch(BASE_URL+"/profile/edit", 
+      formData,
+      {withCredentials: true}
+    );
+    console.log("res ✅: ", res.data.data);
+
+    dispatch(addUser(res?.data?.data));
     setSaved(true);
 
     setTimeout(() => {
       setSaved(false);
     }, 2200);
-  };
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   return (
     <section className="py-16 sm:py-20 xl:py-24 bg-base-100 text-base-content min-h-screen overflow-hidden">
