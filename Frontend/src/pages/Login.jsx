@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import axios from "axios";
-import { BASE_URL } from "../utils/constants.js"; 
+import { BASE_URL } from "../utils/constants.js";
+import { useDispatch } from "react-redux";
+import { addUser, removeUser } from "../redux/userSlice.js";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,6 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState("Aditya@123");
   const [error, setError] = useState("")
 
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   async function handleLogin () {
@@ -28,7 +31,10 @@ const Login = () => {
           { withCredentials: true}
         );
 
-        navigate("/home");
+        console.log("res ✅: ", res);
+
+        dispatch(addUser(res.data));
+        navigate("/profile");
 
     } catch (err) {
        setError(err?.response?.data || err.message || "Something went wrong!");
@@ -52,7 +58,7 @@ const Login = () => {
           { withCredentials: true}
         );
 
-        navigate("/home");
+        navigate("home");
         
     } catch (err) {
         setError(err?.response?.data || err.message || "Something went wrong!");

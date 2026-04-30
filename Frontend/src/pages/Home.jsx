@@ -20,7 +20,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-// ---------------- ANIMATIONS ----------------
+// Animations
 const defaultViewport = { once: false, amount: 0.2 };
 
 const fadeUp = {
@@ -88,7 +88,7 @@ const statPop = {
 const pageShell =
   "w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12";
 
-// ---------------- MOCK COMPONENTS ----------------
+// Mock components
 const MockWorkoutLog = () => (
   <div className="bg-base-200 border border-base-300 rounded-3xl p-4 sm:p-6 shadow-xl w-full">
     <div className="flex items-center justify-between mb-6 gap-3">
@@ -1024,7 +1024,7 @@ const FinalCTASection = () => {
   );
 };
 
-// ---------------- MAIN PAGE ----------------
+// Main page
 const Home = () => {
   return (
     <div className="bg-base-100 text-base-content min-h-screen overflow-hidden">
