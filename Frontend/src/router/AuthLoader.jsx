@@ -32,7 +32,7 @@ const AuthLoader = () => {
   }, [dispatch]);
 
   if (loading) {
-    return <Loading message="Loading your profile..." />;
+    return <Loading message="Loading your page..." />;
   }
 
   return <AppRouter />;
