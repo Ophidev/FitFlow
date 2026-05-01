@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addUser, removeUser } from "../redux/userSlice";
 
 // Animations
@@ -84,24 +84,31 @@ const goalOptions = [
 ];
 
 const Profile = () => {
+  const user = useSelector((state) => state.user);
+
+  console.log("user : ✅ : ", user);
 
   const [formData, setFormData] = useState({
-    firstName: "Ayush",
-    lastName: "bhatt",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
     profilePicture:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80",
-    age: "18",
-    height: "179",
-    weight: "74",
-    goal: "gain strength",
+      user?.profilePicture ||
+      "https://cdn.pixabay.com/photo/2016/09/28/02/14/user-1699635_640.png",
+    age: user?.age || "",
+    height: user?.height || "",
+    weight: user?.weight || "",
+    goal: user?.goal || "",
   });
-
-  const [saved, setSaved] = useState(false);
   
+  const [saved, setSaved] = useState(false);
+
   const dispatch = useDispatch();
 
   const fullName = useMemo(() => {
-    return `${formData.firstName || ""} ${formData.lastName || ""}`.trim() || "Your Name";
+    return (
+      `${formData.firstName || ""} ${formData.lastName || ""}`.trim() ||
+      "Your Name"
+    );
   }, [formData.firstName, formData.lastName]);
 
   const bmi = useMemo(() => {
@@ -112,7 +119,6 @@ const Profile = () => {
   }, [formData.height, formData.weight]);
 
   const profileCompletion = useMemo(() => {
-
     //1. get Array of all fields.
     const fields = [
       formData.firstName,
@@ -125,7 +131,9 @@ const Profile = () => {
     ];
 
     //2. count non-empty fields.
-    const completed = fields.filter((item) => item && String(item).trim() !== "").length;
+    const completed = fields.filter(
+      (item) => item && String(item).trim() !== "",
+    ).length;
 
     //3. convert to percentage.
     return Math.round((completed / fields.length) * 100);
@@ -138,7 +146,7 @@ const Profile = () => {
       [field]: value,
     }));
 
-  /*
+    /*
     The square brackets [field] are not for arrays here —
     they’re JavaScript’s computed property syntax for objects.
     It means: "use the value of the variable field as the key" 
@@ -146,33 +154,28 @@ const Profile = () => {
   */
   };
 
-  useEffect(() => {
+  useEffect(() => {});
 
-  });
+  const handleSave = async (e) => {
+    e.preventDefault();
 
-const handleSave = async (e) => {
-  e.preventDefault();
+    try {
+      // Your API call goes here
+      const res = await axios.patch(BASE_URL + "/profile/edit", formData, {
+        withCredentials: true,
+      });
+      console.log("res ✅: ", res.data.data);
 
-  try {
-    // Your API call goes here
-    const res = await axios.patch(BASE_URL+"/profile/edit", 
-      formData,
-      {withCredentials: true}
-    );
-    console.log("res ✅: ", res.data.data);
+      dispatch(addUser(res?.data?.data));
+      setSaved(true);
 
-    dispatch(addUser(res?.data?.data));
-    setSaved(true);
-
-    setTimeout(() => {
-      setSaved(false);
-    }, 2200);
-
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+      setTimeout(() => {
+        setSaved(false);
+      }, 2200);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <section className="py-16 sm:py-20 xl:py-24 bg-base-100 text-base-content min-h-screen overflow-hidden">
@@ -235,8 +238,12 @@ const handleSave = async (e) => {
             <div className="relative z-10">
               <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
                 <div>
-                  <p className="text-sm text-base-content/70">Profile Insight</p>
-                  <h3 className="text-2xl sm:text-3xl font-bold">Body Snapshot</h3>
+                  <p className="text-sm text-base-content/70">
+                    Profile Insight
+                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-bold">
+                    Body Snapshot
+                  </h3>
                 </div>
                 <div className="badge badge-secondary gap-2">
                   <HeartPulse size={14} />
@@ -273,7 +280,9 @@ const handleSave = async (e) => {
                   }}
                   role="progressbar"
                 >
-                  <span className="text-xs font-bold">{profileCompletion}%</span>
+                  <span className="text-xs font-bold">
+                    {profileCompletion}%
+                  </span>
                 </div>
               </div>
 
@@ -522,6 +531,10 @@ const handleSave = async (e) => {
                     onChange={(e) => handleChange("goal", e.target.value)}
                     className="select select-bordered w-full rounded-2xl bg-base-100 pr-12 capitalize focus:outline-none"
                   >
+                    <option value="" disabled>
+                      Select your goal
+                    </option>
+
                     {goalOptions.map((goal) => (
                       <option key={goal} value={goal} className="capitalize">
                         {goal}
@@ -543,7 +556,10 @@ const handleSave = async (e) => {
                 viewport={defaultViewport}
                 className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
               >
-                <button type="submit" className="btn btn-primary btn-lg rounded-full">
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg rounded-full"
+                >
                   Save Changes
                   <Save size={18} />
                 </button>
@@ -620,7 +636,9 @@ const handleSave = async (e) => {
                       }}
                       role="progressbar"
                     >
-                      <span className="text-sm font-bold">{profileCompletion}%</span>
+                      <span className="text-sm font-bold">
+                        {profileCompletion}%
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -651,14 +669,18 @@ const handleSave = async (e) => {
                       className="bg-base-100 border border-base-300 rounded-3xl p-4 min-w-0"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <div className={`btn btn-sm btn-circle pointer-events-none ${item.color}`}>
+                        <div
+                          className={`btn btn-sm btn-circle pointer-events-none ${item.color}`}
+                        >
                           {item.icon}
                         </div>
                         <span className="text-sm text-base-content/70">
                           {item.label}
                         </span>
                       </div>
-                      <p className="text-lg sm:text-xl font-bold break-words">{item.value}</p>
+                      <p className="text-lg sm:text-xl font-bold break-words">
+                        {item.value}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -690,27 +712,32 @@ const handleSave = async (e) => {
                   { label: "BMI", value: bmi },
                   { label: "Completion", value: `${profileCompletion}%` },
                   { label: "Age", value: formData.age || "--" },
-                  { label: "Weight", value: formData.weight ? `${formData.weight} kg` : "--" },
+                  {
+                    label: "Weight",
+                    value: formData.weight ? `${formData.weight} kg` : "--",
+                  },
                 ].map((item) => (
                   <div
                     key={item.label}
                     className="bg-base-100 border border-base-300 rounded-2xl p-4"
                   >
-                    <p className="text-xs text-base-content/60 mb-1">{item.label}</p>
+                    <p className="text-xs text-base-content/60 mb-1">
+                      {item.label}
+                    </p>
                     <p className="font-bold">{item.value}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-success text-success-content rounded-[2rem] p-6 shadow-lg">
+            <div className="bg-success text-success-content rounded-4xl p-6 shadow-lg">
               <div className="flex items-center gap-3 mb-3">
                 <CheckCircle2 size={20} />
                 <h3 className="font-bold text-lg">Profile Ready</h3>
               </div>
               <p className="opacity-90 text-sm sm:text-base leading-relaxed">
-                A complete profile makes your app experience feel more
-                personal, intelligent, and visually polished.
+                A complete profile makes your app experience feel more personal,
+                intelligent, and visually polished.
               </p>
             </div>
           </motion.div>
