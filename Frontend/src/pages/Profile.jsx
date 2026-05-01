@@ -230,7 +230,7 @@ const Profile = () => {
             variants={fadeLeft}
             initial="hidden"
             animate="visible"
-            className="bg-base-200 border border-base-300 rounded-[2rem] p-5 sm:p-6 shadow-xl overflow-hidden relative"
+            className="bg-base-200 border border-base-300 rounded-4xl p-5 sm:p-6 shadow-xl overflow-hidden relative"
           >
             <div className="absolute top-0 right-0 w-36 h-36 bg-primary/10 blur-3xl rounded-full" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-secondary/10 blur-3xl rounded-full" />
@@ -313,7 +313,7 @@ const Profile = () => {
             variants={fadeRight}
             initial="hidden"
             animate="visible"
-            className="bg-base-200 border border-base-300 rounded-[2rem] p-5 sm:p-7 shadow-xl"
+            className="bg-base-200 border border-base-300 rounded-4xl p-5 sm:p-7 shadow-xl"
           >
             <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
               <div>
@@ -564,7 +564,7 @@ const Profile = () => {
                   <Save size={18} />
                 </button>
 
-                <div className="min-h-[24px] flex items-center">
+                <div className="min-h-6 flex items-center">
                   {saved ? (
                     <span className="text-success flex items-center gap-2 text-sm font-medium">
                       <CheckCircle2 size={16} />
@@ -587,7 +587,7 @@ const Profile = () => {
             animate="visible"
             className="space-y-6 xl:sticky xl:top-24"
           >
-            <div className="bg-base-200 border border-base-300 rounded-[2rem] p-6 sm:p-7 shadow-xl overflow-hidden relative">
+            <div className="bg-base-200 border border-base-300 rounded-4xl p-6 sm:p-7 shadow-xl overflow-hidden relative">
               <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-3xl rounded-full" />
               <div className="absolute bottom-0 left-0 w-36 h-36 bg-secondary/10 blur-3xl rounded-full" />
 
@@ -608,7 +608,7 @@ const Profile = () => {
                     </div>
 
                     <div className="min-w-0">
-                      <h2 className="text-2xl sm:text-3xl font-bold break-words">
+                      <h2 className="text-2xl sm:text-3xl font-bold wrap-break-words">
                         {fullName}
                       </h2>
                       <p className="text-base-content/70 text-sm sm:text-base capitalize">
@@ -678,7 +678,7 @@ const Profile = () => {
                           {item.label}
                         </span>
                       </div>
-                      <p className="text-lg sm:text-xl font-bold break-words">
+                      <p className="text-lg sm:text-xl font-bold wrap-break-words">
                         {item.value}
                       </p>
                     </div>
@@ -687,7 +687,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="bg-base-200 border border-base-300 rounded-[2rem] p-6 shadow-lg">
+            <div className="bg-base-200 border border-base-300 rounded-4xl p-6 shadow-lg">
               <div className="flex items-center gap-3 mb-4">
                 <Target className="text-primary" size={20} />
                 <h3 className="font-bold text-xl">Goal Focus</h3>
@@ -701,7 +701,7 @@ const Profile = () => {
               </p>
             </div>
 
-            <div className="bg-base-200 border border-base-300 rounded-[2rem] p-6 shadow-lg">
+            <div className="bg-base-200 border border-base-300 rounded-4xl p-6 shadow-lg">
               <div className="flex items-center gap-3 mb-4">
                 <Flame className="text-secondary" size={20} />
                 <h3 className="font-bold text-xl">Smart Snapshot</h3>
