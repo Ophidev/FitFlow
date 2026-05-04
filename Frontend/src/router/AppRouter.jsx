@@ -8,6 +8,7 @@ import MainLayout from "../layouts/MainLayout.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import Profile from "../pages/Profile.jsx";
 import NotFound from "../pages/NotFound.jsx";
+import Dashboard from "../pages/Dashboard.jsx";
 
 const AppRouter = () => {
   const user = useSelector((state) => state.user);
@@ -27,6 +28,7 @@ const AppRouter = () => {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<Profile />} />
+          <Route path="/dashboard" element={<Dashboard/>} />
         </Route>
 
         {/* 404 fallback */}

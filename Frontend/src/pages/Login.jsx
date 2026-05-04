@@ -4,6 +4,8 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants.js";
 import { useDispatch } from "react-redux";
 import { addUser, removeUser } from "../redux/userSlice.js";
+import { checkUserProfileData } from "../utils/checkUserData.js";
+import { getProfileRedirectPath } from "../utils/getProfileRedirectPath.js";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,59 +14,55 @@ const Login = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("Aditya@gmail.com");
   const [password, setPassword] = useState("Aditya@123");
-  const [error, setError] = useState("")
+  const [error, setError] = useState("");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  async function handleLogin () {
-
+  async function handleLogin() {
     try {
+      setError("");
 
-        setError("");
-        
-        const res = await axios.post(BASE_URL+"/login",
-          {
-            email,
-            password
-          },
-          { withCredentials: true}
-        );
+      const res = await axios.post(
+        BASE_URL + "/login",
+        {
+          email,
+          password,
+        },
+        { withCredentials: true },
+      );
 
-        console.log("res ✅: ", res);
+      console.log("res ✅: ", res);
 
-        dispatch(addUser(res.data));
-        navigate("/profile");
+      dispatch(addUser(res.data));
+
+      navigate(getProfileRedirectPath(res.data), { replace: true});
 
     } catch (err) {
-       setError(err?.response?.data || err.message || "Something went wrong!");
+      setError(err?.response?.data || err.message || "Something went wrong!");
     }
+  }
 
-  };
+  async function handleSignUp() {
+    try {
+      setError("");
 
-  async function handleSignUp () {
+      const res = await axios.post(
+        BASE_URL + "/signup",
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+        },
+        { withCredentials: true },
+      );
 
-        try {
-
-        setError("");
-        
-        const res = await axios.post(BASE_URL+"/signup",
-          {
-            firstName,
-            lastName,
-            email,
-            password
-          },
-          { withCredentials: true}
-        );
-
-        navigate("home");
-        
+      navigate("home");
     } catch (err) {
-        setError(err?.response?.data || err.message || "Something went wrong!");
+      setError(err?.response?.data || err.message || "Something went wrong!");
     }
-
-  };
+  }
 
   return (
     <div className="min-h-screen flex justify-center items-center">
@@ -112,11 +110,10 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <p className="mt-2 p-1 text-[14px] text-red-600">
-            {error}
-          </p>
+          <p className="mt-2 p-1 text-[14px] text-red-600">{error}</p>
 
-          <button className="btn btn-primary w-full mt-4"
+          <button
+            className="btn btn-primary w-full mt-4"
             onClick={isLogin ? handleLogin : handleSignUp}
           >
             {isLogin ? "Login" : "Sign Up"}
@@ -126,9 +123,7 @@ const Login = () => {
             className="text-center mt-2 cursor-pointer text-sm link"
             onClick={() => setIsLogin(!isLogin)}
           >
-            {isLogin
-              ? "New user? Sign up"
-              : "Already have an account? Login"}
+            {isLogin ? "New user? Sign up" : "Already have an account? Login"}
           </p>
         </div>
       </div>
