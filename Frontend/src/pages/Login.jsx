@@ -32,14 +32,17 @@ const Login = () => {
         { withCredentials: true },
       );
 
-      console.log("res ✅: ", res);
-
       dispatch(addUser(res.data));
 
-      navigate(getProfileRedirectPath(res.data), { replace: true});
-
+      navigate(getProfileRedirectPath(res.data), { replace: true });
     } catch (err) {
-      setError(err?.response?.data || err.message || "Something went wrong!");
+      setError(
+        typeof err?.response?.data === "string"
+          ? err.response.data
+          : err?.response?.data?.message ||
+              err.message ||
+              "Something went wrong!",
+      );
     }
   }
 
@@ -58,7 +61,9 @@ const Login = () => {
         { withCredentials: true },
       );
 
-      navigate("home");
+      dispatch(addUser(res.data));
+
+      navigate(getProfileRedirectPath(res.data), { replace: true });
     } catch (err) {
       setError(err?.response?.data || err.message || "Something went wrong!");
     }
