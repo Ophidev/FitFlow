@@ -1,6 +1,7 @@
 const express = require("express");
 const userAuth = require("../middlewares/auth.js");
 const { validateEditProfileData } = require("../utils/validation.js");
+const sanitizeUser = require("../utils/sanitizeUser.js");
 
 const profileRouter = express.Router();
 
@@ -10,7 +11,7 @@ profileRouter.get("/profile/view", userAuth, async (req,res) => {
 
         const user = req.user; // getting the user attached by userAuth
 
-        res.send(user);
+        res.send(sanitizeUser(user));
 
     } catch(err) {
         res.status(400).send("ERROR inside /profile/view: "+ err.message);
@@ -36,7 +37,7 @@ profileRouter.patch("/profile/edit", userAuth, async (req,res) => {
 
         res.status(201).json({
             message: `${loggedInUser.firstName}, your profile updated successfully ✅`,
-            data: loggedInUser
+            data: sanitizeUser(loggedInUser)
         });
 
     } catch(err){

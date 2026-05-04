@@ -3,6 +3,7 @@ const { validateSignupData } = require("../utils/validation.js");
 const User = require("../models/user.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sanitizeUser = require("../utils/sanitizeUser.js");
 
 const authRouter = express.Router();
 
@@ -29,7 +30,7 @@ authRouter.post("/signup", async (req, res) => {
 
     const savedUser = await user.save();
 
-    res.json({ message: "user data successfully saved!", data: savedUser });
+    res.json({ message: "user data successfully saved!", data: sanitizeUser(savedUser) });
     
   } catch (error) {
     res.status(400).send("Error signup : " + error.message);
@@ -58,7 +59,7 @@ authRouter.post("/login", async (req, res) => {
         expires: new Date(Date.now() + 8 + 3600000),
       });
 
-      res.send(user);
+      res.send(sanitizeUser(user));
     } else {
       throw new Error("Credential not found!");
     }
