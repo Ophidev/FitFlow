@@ -15,12 +15,16 @@ const Login = () => {
   const [email, setEmail] = useState("Aditya@gmail.com");
   const [password, setPassword] = useState("Aditya@123");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   async function handleLogin() {
+    
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
       setError("");
 
       const res = await axios.post(
@@ -43,11 +47,18 @@ const Login = () => {
               err.message ||
               "Something went wrong!",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function handleSignUp() {
+    
+    if (isSubmitting) return;
+
     try {
+
+      setIsSubmitting(true);
       setError("");
 
       const res = await axios.post(
@@ -66,6 +77,8 @@ const Login = () => {
       navigate(getProfileRedirectPath(res.data), { replace: true });
     } catch (err) {
       setError(err?.response?.data || err.message || "Something went wrong!");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -120,8 +133,9 @@ const Login = () => {
           <button
             className="btn btn-primary w-full mt-4"
             onClick={isLogin ? handleLogin : handleSignUp}
+            disabled={isSubmitting}
           >
-            {isLogin ? "Login" : "Sign Up"}
+            {isSubmitting ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
           </button>
 
           <p

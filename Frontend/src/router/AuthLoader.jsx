@@ -28,7 +28,11 @@ const AuthLoader = () => {
 
         dispatch(addUser(res.data));
       } catch (err) {
-        dispatch(removeUser());
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          dispatch(removeUser());
+        } else {
+          console.error("Session restore failed:", err.message);
+        }
       } finally {
         setLoading(false);
       }
