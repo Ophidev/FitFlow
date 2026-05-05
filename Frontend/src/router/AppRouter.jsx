@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute.jsx";
 import Profile from "../pages/Profile.jsx";
 import NotFound from "../pages/NotFound.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
+import { getProfileRedirectPath } from "../utils/getProfileRedirectPath.js";
 
 const AppRouter = () => {
   const user = useSelector((state) => state.user);
@@ -22,7 +23,7 @@ const AppRouter = () => {
         {/* Login Route */}
         <Route
           path="login"
-          element={user ? <Navigate to="/" replace /> : <Login />}
+          element={user ? <Navigate to={getProfileRedirectPath(user)} replace /> : <Login />}
         />
 
         {/* Protected Routes */}
