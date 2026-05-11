@@ -41,9 +41,13 @@ FitFlow is a modern, full-stack workout tracking platform for gym lovers and hom
 ## 🏗️ Architecture
 
 ```mermaid
-graph TD
-    A[Frontend - React] -->|REST API| B[Backend - Express]
-    B --> C[MongoDB Database]
+flowchart TD
+    FE[Frontend React App]
+    BE[Backend Express API]
+    DB[(MongoDB Database)]
+
+    FE -->|REST API| BE
+    BE --> DB
 ```
 
 ---
