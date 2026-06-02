@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useState, useEffect, useCallback } from "react";
 import { BASE_URL } from "../utils/constants";
-import Loading from "../pages/Loading.jsx"
+import Loading from "../pages/Loading.jsx";
 
 const Planner = () => {
   // Initial Local State (Dummy Data)
@@ -106,10 +106,6 @@ const Planner = () => {
       console.log("something went wrong !! : ", error);
     }
   }, [selectedDayId]);
-
-  useEffect(() => {
-    fetchExercisesOfDay();
-  }, [fetchExercisesOfDay]);
 
   // useEffect which will fetch initial workout days
   useEffect(() => {
@@ -260,6 +256,13 @@ const Planner = () => {
       await axios.delete(`${BASE_URL}/exercise/${exerciseId}`, {
         withCredentials: true,
       });
+
+      // Clear edit state if deleted exercise was being edited
+      if (editingExerciseId === exerciseId) {
+        setEditingExerciseId(null);
+        setEditExerciseData(null);
+      }
+
       await fetchExercisesOfDay();
     } catch (error) {
       console.log("something went wrong !! : ", error);
