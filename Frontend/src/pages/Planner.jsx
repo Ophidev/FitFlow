@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BASE_URL } from "../utils/constants";
 
 const Planner = () => {
@@ -49,32 +49,41 @@ const Planner = () => {
   const selectedWorkout = workoutDays.find((day) => day._id === selectedDayId);
 
   // fetch Workout Days
+  const [isLoadingDays, setIsLoadingDays] = useState(false);
+
   const fetchWorkoutDays = async () => {
     try {
+      // Start loading
+      setIsLoadingDays(true);
+
       const response = await axios.get(BASE_URL + "/workout/days", {
         withCredentials: true,
       });
 
-      // console.log(response?.data?.data);
-
-      // extracted the array from backend's data structure
+      // Extract backend data
       const rawDays = response?.data?.data || [];
 
-      // Normalize the data: inject an empty exercises array into each workout day
-      const formatDays = rawDays?.map((day) => ({
+      // Normalize data
+      const formatDays = rawDays.map((day) => ({
         ...day,
         exercises: null,
       }));
 
-      // Update your state to trigger the UI re-render
+      // Update state
       setWorkoutDays(formatDays);
     } catch (error) {
-      console.log("Something went wrong !! : ", error);
+      console.log("Something went wrong !! :", error);
+    } finally {
+      // Stop loading
+      setIsLoadingDays(false);
     }
   };
 
   // fetch Exercises of a Worout Day
-  const fetchExercisesOfDay = async () => {
+  // useCallback keeps the fetch function stable across renders.
+  // This helps useEffect track dependencies correctly and prevents
+  // stale closures or incorrect exercise data during fast day switching.
+  const fetchExercisesOfDay = useCallback(async () => {
     try {
       if (!selectedDayId) return;
 
@@ -83,10 +92,8 @@ const Planner = () => {
         { withCredentials: true },
       );
 
-      // get raw Exercises from backend response
       const rawExercisesOfDay = response?.data?.data;
 
-      // set the raw Exercises to matched workoutDay Exercises []
       setWorkoutDays((prev) =>
         prev.map((day) =>
           day._id === selectedDayId
@@ -97,7 +104,11 @@ const Planner = () => {
     } catch (error) {
       console.log("something went wrong !! : ", error);
     }
-  };
+  }, [selectedDayId]);
+
+  useEffect(() => {
+    fetchExercisesOfDay();
+  }, [fetchExercisesOfDay]);
 
   // useEffect which will fetch initial workout days
   useEffect(() => {
@@ -107,7 +118,7 @@ const Planner = () => {
   // useEffect for fetch Exercise for perticular Workoutday as it is selected.
   useEffect(() => {
     fetchExercisesOfDay();
-  }, [selectedDayId]);
+  }, [fetchExercisesOfDay]);
 
   // handle create day
   const handleCreateDay = async () => {
@@ -144,7 +155,7 @@ const Planner = () => {
   // handle delete a working day
   const handleDeleteDay = async (id, e) => {
     e.stopPropagation(); // stop click from selecting the card
-    console.log("id of day : ", id);
+    // console.log("id of day : ", id);
     try {
       await axios.delete(`${BASE_URL}/workout/day/${id}`, {
         withCredentials: true,
@@ -157,11 +168,28 @@ const Planner = () => {
     }
   };
 
+  // Shared validation helper for exercise inputs
+  const isValidExerciseData = (exerciseData) => {
+    return (
+      exerciseData.exerciseName.trim() &&
+      exerciseData.sets > 0 &&
+      exerciseData.reps > 0 &&
+      exerciseData.restTime >= 0
+    );
+  };
+
   // handle add a new Exercise method
   const handleAddExercise = async () => {
     // prevent empty exercises
     if (!newExercise.exerciseName.trim()) return;
 
+    // Basic frontend validation to prevent invalid exercise values.
+    // Sets/Reps must be greater than 0 and rest time cannot be negative.
+
+    if (!isValidExerciseData(newExercise)) {
+      console.log("Invalid exercise data");
+      return;
+    }
     // check the current working Day
     if (!selectedDayId) return;
 
@@ -199,6 +227,11 @@ const Planner = () => {
 
   // 2. Handle Update (API Call)
   const handleUpdateExercise = async () => {
+    if (!isValidExerciseData(editExerciseData)) {
+      console.log("Invalid exercise data");
+      return;
+    }
+
     try {
       // API CALL: PATCH /exercise/:id
       await axios.patch(
@@ -360,6 +393,7 @@ const Planner = () => {
                     </label>
                     <input
                       type="number"
+                      min="1"
                       className="input input-bordered bg-base-200"
                       value={newExercise.sets}
                       onChange={(e) =>
@@ -376,6 +410,7 @@ const Planner = () => {
                     </label>
                     <input
                       type="number"
+                      min="1"
                       className="input input-bordered bg-base-200"
                       value={newExercise.reps}
                       onChange={(e) =>
@@ -392,6 +427,7 @@ const Planner = () => {
                     </label>
                     <input
                       type="number"
+                      min="1"
                       className="input input-bordered bg-base-200"
                       value={newExercise.restTime}
                       onChange={(e) =>
@@ -423,146 +459,165 @@ const Planner = () => {
 
             {/* EXERCISE LIST */}
             <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-4 custom-scrollbar pb-10">
-              {selectedWorkout.exercises && selectedWorkout.exercises.map((exercise, index) => (
-                <div
-                  key={exercise._id}
-                  className="animate-[fadeIn_0.3s_ease-out]"
-                >
-                  {editingExerciseId === exercise._id ? (
-                    /* INLINE EDIT FORM  */
-                    <div className="bg-base-300 p-5 rounded-2xl border-2 border-primary flex flex-col gap-3 shadow-lg">
-                      <input
-                        type="text"
-                        className="input input-bordered font-bold"
-                        value={editExerciseData.exerciseName}
-                        onChange={(e) =>
-                          setEditExerciseData({
-                            ...editExerciseData,
-                            exerciseName: e.target.value,
-                          })
-                        }
-                      />
-                      <div className="grid grid-cols-3 gap-2">
+              {selectedWorkout.exercises &&
+                selectedWorkout.exercises.map((exercise, index) => (
+                  <div
+                    key={exercise._id}
+                    className="animate-[fadeIn_0.3s_ease-out]"
+                  >
+                    {editingExerciseId === exercise._id ? (
+                      /* INLINE EDIT FORM  */
+                      <div className="bg-base-300 p-5 rounded-2xl border-2 border-primary flex flex-col gap-3 shadow-lg">
                         <input
-                          type="number"
-                          className="input input-bordered"
-                          value={editExerciseData.sets}
+                          type="text"
+                          className="input input-bordered font-bold"
+                          value={editExerciseData.exerciseName}
                           onChange={(e) =>
                             setEditExerciseData({
                               ...editExerciseData,
-                              sets: Number(e.target.value),
+                              exerciseName: e.target.value,
                             })
                           }
                         />
-                        <input
-                          type="number"
-                          className="input input-bordered"
-                          value={editExerciseData.reps}
-                          onChange={(e) =>
-                            setEditExerciseData({
-                              ...editExerciseData,
-                              reps: Number(e.target.value),
-                            })
-                          }
-                        />
-                        <input
-                          type="number"
-                          className="input input-bordered"
-                          value={editExerciseData.restTime}
-                          onChange={(e) =>
-                            setEditExerciseData({
-                              ...editExerciseData,
-                              restTime: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        className="input input-bordered"
-                        value={editExerciseData.notes}
-                        onChange={(e) =>
-                          setEditExerciseData({
-                            ...editExerciseData,
-                            notes: e.target.value,
-                          })
-                        }
-                      />
-                      <div className="flex gap-2 justify-end mt-2">
-                        <button
-                          onClick={() => setEditingExerciseId(null)}
-                          className="btn btn-ghost btn-sm"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleUpdateExercise}
-                          className="btn btn-success btn-sm"
-                        >
-                          Update
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* NORMAL VIEW  */
-                    <div className="group flex flex-col md:flex-row justify-between bg-base-100 p-5 rounded-2xl border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-lg">
-                          {index + 1}
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            type="number"
+                            className="input input-bordered"
+                            value={editExerciseData.sets}
+                            onChange={(e) =>
+                              setEditExerciseData({
+                                ...editExerciseData,
+                                sets: Number(e.target.value),
+                              })
+                            }
+                          />
+                          <input
+                            type="number"
+                            className="input input-bordered"
+                            value={editExerciseData.reps}
+                            onChange={(e) =>
+                              setEditExerciseData({
+                                ...editExerciseData,
+                                reps: Number(e.target.value),
+                              })
+                            }
+                          />
+                          <input
+                            type="number"
+                            className="input input-bordered"
+                            value={editExerciseData.restTime}
+                            onChange={(e) =>
+                              setEditExerciseData({
+                                ...editExerciseData,
+                                restTime: Number(e.target.value),
+                              })
+                            }
+                          />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-xl mb-2">
-                            {exercise.exerciseName}
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            <span className="badge badge-neutral font-medium">
-                              🔥 {exercise.sets} Sets
-                            </span>
-                            <span className="badge badge-neutral font-medium">
-                              🔄 {exercise.reps} Reps
-                            </span>
-                            <span className="badge badge-outline text-base-content/60 font-medium">
-                              ⏱ {exercise.restTime}s rest
-                            </span>
+                        <input
+                          type="text"
+                          className="input input-bordered"
+                          value={editExerciseData.notes}
+                          onChange={(e) =>
+                            setEditExerciseData({
+                              ...editExerciseData,
+                              notes: e.target.value,
+                            })
+                          }
+                        />
+                        <div className="flex gap-2 justify-end mt-2">
+                          <button
+                            onClick={() => setEditingExerciseId(null)}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleUpdateExercise}
+                            className="btn btn-success btn-sm"
+                          >
+                            Update
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* NORMAL VIEW  */
+                      <div className="group flex flex-col md:flex-row justify-between bg-base-100 p-5 rounded-2xl border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        <div className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-lg">
+                            {index + 1}
                           </div>
-                          {exercise.notes && (
-                            <p className="text-sm mt-3 text-base-content/60 italic">
-                              💡 {exercise.notes}
-                            </p>
-                          )}
+                          <div>
+                            <h3 className="font-bold text-xl mb-2">
+                              {exercise.exerciseName}
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="badge badge-neutral font-medium">
+                                🔥 {exercise.sets} Sets
+                              </span>
+                              <span className="badge badge-neutral font-medium">
+                                🔄 {exercise.reps} Reps
+                              </span>
+                              <span className="badge badge-outline text-base-content/60 font-medium">
+                                ⏱ {exercise.restTime}s rest
+                              </span>
+                            </div>
+                            {exercise.notes && (
+                              <p className="text-sm mt-3 text-base-content/60 italic">
+                                💡 {exercise.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-4 md:mt-0 flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => startEditing(exercise)}
+                            className="btn btn-ghost btn-sm text-primary"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExercise(exercise._id)}
+                            className="btn btn-error btn-sm btn-outline"
+                          >
+                            Remove
+                          </button>
                         </div>
                       </div>
-                      <div className="mt-4 md:mt-0 flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => startEditing(exercise)}
-                          className="btn btn-ghost btn-sm text-primary"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteExercise(exercise._id)}
-                          className="btn btn-error btn-sm btn-outline"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                ))}
             </div>
           </div>
         )}
       </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `.custom-scrollbar::-webkit-scrollbar { width: 6px; } 
-          .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
-          .custom-scrollbar::-webkit-scrollbar-thumb { background: #88888840; border-radius: 10px; } 
-          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`,
-        }}
-      />
+      <style>{`
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #88888840;
+    border-radius: 10px;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`}</style>
     </div>
   );
 };
