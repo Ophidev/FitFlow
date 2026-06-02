@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState, useEffect, useCallback } from "react";
 import { BASE_URL } from "../utils/constants";
+import Loading from "../pages/Loading.jsx"
 
 const Planner = () => {
   // Initial Local State (Dummy Data)
@@ -306,34 +307,61 @@ const Planner = () => {
         </div>
 
         <div className="flex flex-col gap-3 overflow-y-auto pr-2 pb-4 custom-scrollbar">
-          {workoutDays.map((day) => {
-            const isSelected = selectedDayId === day._id;
-            return (
-              <div
-                key={day._id}
-                onClick={() => setSelectedDayId(day._id)}
-                className={`group relative flex justify-between items-center p-5 rounded-2xl cursor-pointer transition-all duration-300 ease-out border 
-                  ${isSelected ? "bg-primary text-primary-content border-primary shadow-lg shadow-primary/20 scale-[1.02] translate-x-1" : "bg-base-100 border-base-300 hover:border-primary/50 hover:shadow-md hover:translate-x-1"}`}
-              >
-                <div className="flex flex-col">
-                  <span className="font-bold text-lg">{day.title}</span>
-                  <span
-                    className={`text-xs mt-1 ${isSelected ? "text-primary-content/80" : "text-base-content/50"}`}
-                  >
-                    {day.exercises === null
-                      ? "Click to load"
-                      : `${day.exercises.length} exercises`}
-                  </span>
-                </div>
-                <button
-                  onClick={(e) => handleDeleteDay(day._id, e)}
-                  className={`btn btn-sm btn-circle btn-ghost transition-all duration-300 ${isSelected ? "text-primary-content hover:bg-error" : "opacity-0 group-hover:opacity-100 hover:bg-error hover:text-error-content"}`}
+          {isLoadingDays ? (
+            <Loading />
+          ) : workoutDays.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-10 opacity-70">
+              <span className="text-5xl mb-4">📅</span>
+              <h3 className="text-lg font-bold">No Workout Days Yet</h3>
+              <p className="text-sm text-base-content/60 mt-1">
+                Create your first workout split to get started.
+              </p>
+            </div>
+          ) : (
+            workoutDays.map((day) => {
+              const isSelected = selectedDayId === day._id;
+
+              return (
+                <div
+                  key={day._id}
+                  onClick={() => setSelectedDayId(day._id)}
+                  className={`group relative flex justify-between items-center p-5 rounded-2xl cursor-pointer transition-all duration-300 ease-out border 
+          ${
+            isSelected
+              ? "bg-primary text-primary-content border-primary shadow-lg shadow-primary/20 scale-[1.02] translate-x-1"
+              : "bg-base-100 border-base-300 hover:border-primary/50 hover:shadow-md hover:translate-x-1"
+          }`}
                 >
-                  🗑
-                </button>
-              </div>
-            );
-          })}
+                  <div className="flex flex-col">
+                    <span className="font-bold text-lg">{day.title}</span>
+
+                    <span
+                      className={`text-xs mt-1 ${
+                        isSelected
+                          ? "text-primary-content/80"
+                          : "text-base-content/50"
+                      }`}
+                    >
+                      {day.exercises === null
+                        ? "Click to load"
+                        : `${day.exercises.length} exercises`}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={(e) => handleDeleteDay(day._id, e)}
+                    className={`btn btn-sm btn-circle btn-ghost transition-all duration-300 ${
+                      isSelected
+                        ? "text-primary-content hover:bg-error"
+                        : "opacity-0 group-hover:opacity-100 hover:bg-error hover:text-error-content"
+                    }`}
+                  >
+                    🗑
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -427,7 +455,7 @@ const Planner = () => {
                     </label>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       className="input input-bordered bg-base-200"
                       value={newExercise.restTime}
                       onChange={(e) =>
@@ -482,6 +510,7 @@ const Planner = () => {
                         <div className="grid grid-cols-3 gap-2">
                           <input
                             type="number"
+                            min="1"
                             className="input input-bordered"
                             value={editExerciseData.sets}
                             onChange={(e) =>
@@ -493,6 +522,7 @@ const Planner = () => {
                           />
                           <input
                             type="number"
+                            min="1"
                             className="input input-bordered"
                             value={editExerciseData.reps}
                             onChange={(e) =>
@@ -504,6 +534,7 @@ const Planner = () => {
                           />
                           <input
                             type="number"
+                            min="0"
                             className="input input-bordered"
                             value={editExerciseData.restTime}
                             onChange={(e) =>
