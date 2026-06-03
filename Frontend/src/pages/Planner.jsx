@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState, useEffect, useCallback } from "react";
 import { BASE_URL } from "../utils/constants";
 import Loading from "../pages/Loading.jsx";
+import { Toaster, toast } from "sonner";
 
 const Planner = () => {
   // Initial Local State (Dummy Data)
@@ -74,6 +75,7 @@ const Planner = () => {
       setWorkoutDays(formatDays);
     } catch (error) {
       console.log("Something went wrong !! :", error);
+      toast.error("Failed to fetch workout days");
     } finally {
       // Stop loading
       setIsLoadingDays(false);
@@ -104,6 +106,7 @@ const Planner = () => {
       );
     } catch (error) {
       console.log("something went wrong !! : ", error);
+      toast.error("Failed to fetch exercises");
     }
   }, [selectedDayId]);
 
@@ -120,7 +123,10 @@ const Planner = () => {
   // handle create day
   const handleCreateDay = async () => {
     // validation check
-    if (!newDayTitle.trim()) return;
+    if (!newDayTitle.trim()) {
+      toast.error("Workout day title is required");
+      return;
+    }
 
     // create new object
     //  const newDayPayload = {
@@ -141,8 +147,10 @@ const Planner = () => {
       );
 
       await fetchWorkoutDays();
+      toast.success("Workout day created successfully");
     } catch (error) {
       console.error("Failed to create workout day : ", error);
+      toast.error("Failed to create workout day");
     }
 
     setNewDayTitle("");
@@ -160,8 +168,10 @@ const Planner = () => {
 
       await fetchWorkoutDays();
       if (selectedDayId === id) setSelectedDayId(null);
+      toast.success("Workout day deleted successfully");
     } catch (error) {
       console.log("something went wrong !! : ", error);
+      toast.error("Failed to delete workout day");
     }
   };
 
@@ -178,17 +188,24 @@ const Planner = () => {
   // handle add a new Exercise method
   const handleAddExercise = async () => {
     // prevent empty exercises
-    if (!newExercise.exerciseName.trim()) return;
+    if (!newExercise.exerciseName.trim()) {
+      toast.error("Exercise name is required");
+      return;
+    }
 
     // Basic frontend validation to prevent invalid exercise values.
     // Sets/Reps must be greater than 0 and rest time cannot be negative.
 
     if (!isValidExerciseData(newExercise)) {
       console.log("Invalid exercise data");
+      toast.error("Please enter valid exercise data");
       return;
     }
     // check the current working Day
-    if (!selectedDayId) return;
+    if (!selectedDayId) {
+      toast.error("Please select a workout day first");
+      return;
+    }
 
     try {
       await axios.post(
@@ -208,8 +225,10 @@ const Planner = () => {
         restTime: 60,
         notes: "",
       });
+      toast.success("Exercise added successfully");
     } catch (error) {
       console.log("something went wrong !! : ", error);
+      toast.error("Failed to add exercise");
     }
   };
 
@@ -226,6 +245,7 @@ const Planner = () => {
   const handleUpdateExercise = async () => {
     if (!isValidExerciseData(editExerciseData)) {
       console.log("Invalid exercise data");
+      toast.error("Please enter valid exercise data");
       return;
     }
 
@@ -246,8 +266,10 @@ const Planner = () => {
       await fetchExercisesOfDay(); // Refresh list
       setEditingExerciseId(null); // Exit edit mode
       setEditExerciseData(null);
+      toast.success("Exercise updated successfully");
     } catch (error) {
       console.log("Failed to update exercise: ", error);
+      toast.error("Failed to update exercise");
     }
   };
 
@@ -264,13 +286,17 @@ const Planner = () => {
       }
 
       await fetchExercisesOfDay();
+      toast.success("Exercise deleted successfully");
     } catch (error) {
       console.log("something went wrong !! : ", error);
+      toast.error("Failed to delete exercise");
     }
   };
 
   return (
     <div className="bg-base-100 text-base-content min-h-screen p-4 md:p-8 flex flex-col md:flex-row gap-6">
+      <Toaster position="top-right" richColors />
+
       {/* LEFT PANEL: Workout Days  */}
       <div className="w-full md:w-1/3 bg-base-200 rounded-3xl p-6 shadow-xl flex flex-col h-[85vh] border border-base-300">
         <div className="flex justify-between items-center mb-6">
