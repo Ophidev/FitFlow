@@ -405,14 +405,33 @@ const Planner = () => {
           withCredentials: true,
         });
 
-        const updatedSchedule = { ...weeklySchedule };
-        delete updatedSchedule[selectedWeekday];
-        setWeeklySchedule(updatedSchedule);
+        await fetchWeeklySchedule();
 
         setSelectedWorkoutDayId(null);
 
         toast.success(`${selectedWeekday} marked as Rest Day`);
         return;
+      }
+
+      if (existingSchedule?._id) {
+        await axios.patch(
+          `${BASE_URL}/schedule/${existingSchedule._id}`,
+          { workoutDayId },
+          { withCredentials: true },
+        );
+
+        await fetchWeeklySchedule();
+      } else {
+        await axios.post(
+          BASE_URL + "/schedule/set",
+          {
+            weekday: selectedWeekday,
+            workoutDayId,
+          },
+          { withCredentials: true },
+        );
+
+        await fetchWeeklySchedule();
       }
 
       // If mapping already exists -> PATCH
@@ -423,13 +442,7 @@ const Planner = () => {
           { withCredentials: true },
         );
 
-        setWeeklySchedule((prev) => ({
-          ...prev,
-          [selectedWeekday]: {
-            ...prev[selectedWeekday],
-            workoutDayId,
-          },
-        }));
+        await fetchWeeklySchedule();
       } else {
         // Else create new mapping -> POST
         await axios.post(

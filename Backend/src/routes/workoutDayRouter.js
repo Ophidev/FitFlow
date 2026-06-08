@@ -22,7 +22,7 @@ workoutDayRouter.post("/workout/day", userAuth, async (req, res) => {
     const savedWorkoutDayData = await workoutDaysInstance.save();
 
     res.status(200).json({
-      message: "✅ Workout day added successfuly!",
+      message: "✅ Workout day added successfully!",
     });
   } catch (err) {
     res.status(400).send("ERROR : inside /workout/day " + err.message);
