@@ -11,6 +11,7 @@ import NotFound from "../pages/NotFound.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
 import { getProfileRedirectPath } from "../utils/getProfileRedirectPath.js";
 import Planner from "../pages/Planner.jsx";
+import WorkoutSession from "../pages/WorkoutSession.jsx";
 
 const AppRouter = () => {
   const user = useSelector((state) => state.user);
@@ -32,6 +33,7 @@ const AppRouter = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard/>} />
           <Route path="/planner" element={<Planner/>} />
+          <Route path="/workout/live" element={<WorkoutSession />} />
         </Route>
 
         {/* 404 fallback */}

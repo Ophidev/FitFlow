@@ -7,435 +7,574 @@ const SetLogs = require("../models/setLogs.js");
 
 const workoutExecutionRouter = express.Router();
 
-workoutExecutionRouter.post("/workout/start", userAuth, async (req, res) => {
-    try {
+const getSecondsDifference = (later, earlier) => {
+  return Math.max(
+    0,
+    Math.floor((new Date(later).getTime() - new Date(earlier).getTime()) / 1000),
+  );
+};
 
-        // STEP 1: Get user & input
-        const loggedInUser = req.user;
-        const { workoutDayId } = req.body;
+const getWorkoutDurationExcludingPause = (workoutLog, now) => {
+  let pausedSeconds = Number(workoutLog.totalPausedDuration || 0);
 
-        // STEP 2: Validate workout day ownership
-        const workoutDay = await WorkoutDays.findOne({
-            _id: workoutDayId,
-            userId: loggedInUser._id,
-        });
+  // If somehow workout is still marked paused when duration is calculated,
+  // include the currently open pause window too.
+  if (workoutLog.pausedAt) {
+    pausedSeconds += getSecondsDifference(now, workoutLog.pausedAt);
+  }
 
-        if (!workoutDay) {
-            throw new Error("Workout day not found");
-        }
+  return Math.max(0, getSecondsDifference(now, workoutLog.startedAt) - pausedSeconds);
+};
 
-        // STEP 3: Prepare date & time
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // normalize to start of day
+const getSetDurationExcludingPause = (setLog, now) => {
+  let pausedSeconds = Number(setLog.totalPausedDuration || 0);
 
-        const now = new Date(); // current timestamp
+  if (setLog.pausedAt) {
+    pausedSeconds += getSecondsDifference(now, setLog.pausedAt);
+  }
 
-        // STEP 4: Check for existing active workout
-        const activeWorkout = await WorkoutLog.findOne({
-            userId: loggedInUser._id,
-            status: "in_progress"
-        }).sort({ createdAt: -1 });
+  return Math.max(0, getSecondsDifference(now, setLog.startedAt) - pausedSeconds);
+};
 
+workoutExecutionRouter.get("/workout/active", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
 
-        // STEP 5: Handle existing active workout
-        if (activeWorkout) {
+    // Backend remains source of truth for active resumable session
+    const activeWorkout = await WorkoutLog.findOne({
+      userId: loggedInUser._id,
+      status: { $in: ["in_progress", "paused"] },
+    })
+      .sort({ createdAt: -1 })
+      .populate("workoutDayId", "title");
 
-            const activeDate = new Date(activeWorkout.date);
-            activeDate.setHours(0, 0, 0, 0);
-
-            // CASE A: Same day → Resume
-            if (activeDate.getTime() === today.getTime()) {
-
-                // OPTIONAL SAFETY CHECK:
-                // Prevent starting different workout on same day
-                if (activeWorkout.workoutDayId.toString() !== workoutDayId) {
-                    return res.status(400).json({
-                        message: "Finish current workout before starting another"
-                    });
-                }
-
-                const exercisesList = await Exercises.find({
-                    workoutDayId: activeWorkout.workoutDayId,
-                    userId: loggedInUser._id
-                });
-
-                const completedSets = await SetLogs.find({
-                    workoutLogId: activeWorkout._id,
-                    userId: loggedInUser._id
-                });
-
-                return res.status(200).json({
-                    message: "Resuming workout",
-                    workoutLog: activeWorkout,
-                    exercisesList,
-                    completedSets,
-                    resume: true
-                });
-            }
-
-            // CASE B: Old day → Auto skip
-            activeWorkout.status = "skipped";
-            activeWorkout.completedAt = now;
-
-            // Calculate total duration (seconds)
-            activeWorkout.totalDuration = Math.floor(
-                (now - activeWorkout.startedAt) / 1000
-            );
-
-            await activeWorkout.save();
-
-            // STEP 6: Complete unfinished sets
-            const incompleteSets = await SetLogs.find({
-                workoutLogId: activeWorkout._id,
-                userId: loggedInUser._id,
-                completedAt: { $exists: false }
-            });
-
-            for (const set of incompleteSets) {
-                const timeTaken = Math.floor((now - set.startedAt) / 1000);
-
-                set.completedAt = now;
-                set.timeTaken = timeTaken;
-
-                await set.save();
-            }
-        }
-
-        // STEP 7: Fetch exercises for new workout
-        const allExercises = await Exercises.find({
-            workoutDayId: workoutDayId,
-            userId: loggedInUser._id,
-        });
-
-        if (!allExercises.length) {
-            return res.status(400).send("No exercises found for this workout day");
-        }
-
-        // STEP 8: Create new workout log
-        const workoutLogInstance = new WorkoutLog({
-            userId: loggedInUser._id,
-            workoutDayId,
-            date: today,
-            startedAt: now,
-            totalExercises: allExercises.length,
-            totalSetsCompleted: 0,
-            status: "in_progress"
-        });
-
-        const savedWorkoutLogInstance = await workoutLogInstance.save();
-
-        // STEP 9: Return response
-        res.status(201).json({
-            message: "Workout started",
-            workoutLog: savedWorkoutLogInstance,
-            exercisesList: allExercises,
-            resume: false
-        });
-
-    } catch (err) {
-        res.status(400).send("ERROR inside /workout/start : " + err.message);
+    if (!activeWorkout) {
+      return res.status(200).json({
+        message: "No active workout session",
+        workoutLog: null,
+        exercisesList: [],
+        completedSets: [],
+        resume: false,
+      });
     }
+
+    const exercisesList = await Exercises.find({
+      workoutDayId: activeWorkout.workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    const completedSets = await SetLogs.find({
+      workoutLogId: activeWorkout._id,
+      userId: loggedInUser._id,
+    });
+
+    return res.status(200).json({
+      message: "Active workout session found",
+      workoutLog: activeWorkout,
+      exercisesList,
+      completedSets,
+      resume: true,
+    });
+  } catch (err) {
+    res.status(400).send("ERROR inside /workout/active : " + err.message);
+  }
+});
+
+workoutExecutionRouter.post("/workout/start", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const { workoutDayId } = req.body;
+
+    const workoutDay = await WorkoutDays.findOne({
+      _id: workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    if (!workoutDay) {
+      throw new Error("Workout day not found");
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const now = new Date();
+
+    // Prevent same workout day from being completed multiple times on same day
+    const alreadyCompletedToday = await WorkoutLog.findOne({
+      userId: loggedInUser._id,
+      workoutDayId,
+      date: today,
+      status: "completed",
+    });
+
+    if (alreadyCompletedToday) {
+      return res.status(409).json({
+        message: "This workout was already completed today",
+        code: "ALREADY_COMPLETED_TODAY",
+        workoutLog: alreadyCompletedToday,
+      });
+    }
+
+    // Any in_progress or paused workout is considered resumable active session
+    const activeWorkout = await WorkoutLog.findOne({
+      userId: loggedInUser._id,
+      status: { $in: ["in_progress", "paused"] },
+    }).sort({ createdAt: -1 });
+
+    if (activeWorkout) {
+      const activeDate = new Date(activeWorkout.date);
+      activeDate.setHours(0, 0, 0, 0);
+
+      // Same-day active session should be resumed, not duplicated
+      if (activeDate.getTime() === today.getTime()) {
+        if (activeWorkout.workoutDayId.toString() !== workoutDayId) {
+          return res.status(400).json({
+            message: "Finish current workout before starting another",
+          });
+        }
+
+        const exercisesList = await Exercises.find({
+          workoutDayId: activeWorkout.workoutDayId,
+          userId: loggedInUser._id,
+        });
+
+        const completedSets = await SetLogs.find({
+          workoutLogId: activeWorkout._id,
+          userId: loggedInUser._id,
+        });
+
+        return res.status(200).json({
+          message: "Resuming workout",
+          workoutLog: activeWorkout,
+          exercisesList,
+          completedSets,
+          resume: true,
+        });
+      }
+
+      // Old unfinished workout gets auto-skipped
+      activeWorkout.status = "skipped";
+      activeWorkout.completedAt = now;
+      activeWorkout.totalDuration = getWorkoutDurationExcludingPause(activeWorkout, now);
+      activeWorkout.pausedAt = null;
+
+      await activeWorkout.save();
+
+      const incompleteSets = await SetLogs.find({
+        workoutLogId: activeWorkout._id,
+        userId: loggedInUser._id,
+        completedAt: { $exists: false },
+      });
+
+      for (const set of incompleteSets) {
+        set.completedAt = now;
+        set.timeTaken = getSetDurationExcludingPause(set, now);
+        set.pausedAt = null;
+        await set.save();
+      }
+    }
+
+    const allExercises = await Exercises.find({
+      workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    if (!allExercises.length) {
+      return res.status(400).send("No exercises found for this workout day");
+    }
+
+    const workoutLogInstance = new WorkoutLog({
+      userId: loggedInUser._id,
+      workoutDayId,
+      date: today,
+      startedAt: now,
+      totalExercises: allExercises.length,
+      totalSetsCompleted: 0,
+      status: "in_progress",
+      pausedAt: null,
+      totalPausedDuration: 0,
+    });
+
+    const savedWorkoutLogInstance = await workoutLogInstance.save();
+
+    return res.status(201).json({
+      message: "Workout started",
+      workoutLog: savedWorkoutLogInstance,
+      exercisesList: allExercises,
+      resume: false,
+    });
+  } catch (err) {
+    res.status(400).send("ERROR inside /workout/start : " + err.message);
+  }
 });
 
 workoutExecutionRouter.post("/workout/set/start", userAuth, async (req, res) => {
-    
-    /*
-    User clicks start set
-       ↓
-    Check workout active
-       ↓
-    Check exercise valid
-       ↓
-    Check setNumber valid
-       ↓
-    Check if already exists
-       ↓
-       → resume OR block OR create
-    */
-    try {
+  try {
+    const loggedInUser = req.user;
+    const { workoutLogId, exerciseId, setNumber } = req.body;
 
-        // Step 1: Get user and request data
-        const loggedInUser = req.user;
-        const { workoutLogId, exerciseId, setNumber } = req.body;
+    // Only in_progress workout can start/continue set actions
+    const activeWorkoutLog = await WorkoutLog.findOne({
+      _id: workoutLogId,
+      userId: loggedInUser._id,
+      status: "in_progress",
+    });
 
-        // Step 2: Validate active workout log
-        const activeWorkoutLog = await WorkoutLog.findOne({
-            _id: workoutLogId,
-            userId: loggedInUser._id,
-            status: "in_progress",
-        });
-
-        if (!activeWorkoutLog) {
-            return res.status(404).json({
-                message: "No active workout found"
-            });
-        }
-
-        // Step 3: Validate exercise belongs to this workout
-        const exercise = await Exercises.findOne({
-            _id: exerciseId,
-            workoutDayId: activeWorkoutLog.workoutDayId,
-            userId: loggedInUser._id
-        });
-
-        if (!exercise) {
-            return res.status(404).json({
-                message: "Exercise not found for this workout"
-            });
-        }
-
-        // Step 4: Validate setNumber range
-        if (setNumber < 1 || setNumber > exercise.sets) {
-            return res.status(400).json({
-                message: "Invalid set number"
-            });
-        }
-
-        // Step 5: Check if same set already exists
-        const existingSet = await SetLogs.findOne({
-            userId: loggedInUser._id,
-            workoutLogId,
-            exerciseId,
-            setNumber
-        });
-
-        // If set already exists and not completed → resume instead of blocking
-        if (existingSet && !existingSet.completedAt) {
-            return res.status(200).json({
-                message: "Resuming set",
-                setLog: existingSet,
-                resume: true
-            });
-        }
-
-        // If already completed → block
-        if (existingSet && existingSet.completedAt) {
-            return res.status(409).json({
-                message: "Set already completed"
-            });
-        }
-
-        // Step 6: Prevent multiple active sets
-        const activeSet = await SetLogs.findOne({
-            workoutLogId,
-            userId: loggedInUser._id,
-            completedAt: { $exists: false }
-        });
-
-        if (activeSet) {
-            return res.status(409).json({
-                message: "Another set is already in progress"
-            });
-        }
-
-        // Step 7: Create new set log
-        const newSetLog = await SetLogs.create({
-            userId: loggedInUser._id,
-            workoutLogId,
-            exerciseId,
-            setNumber,
-            startedAt: new Date()
-        });
-
-        // Step 8: Return response
-        return res.status(201).json({
-            message: "Set started successfully",
-            setLog: newSetLog,
-            resume: false
-        });
-
-    } catch (err) {
-        res.status(400).send("ERROR : inside /workout/set/start " + err.message);
+    if (!activeWorkoutLog) {
+      return res.status(404).json({
+        message: "No active workout found or workout is paused",
+      });
     }
 
+    const exercise = await Exercises.findOne({
+      _id: exerciseId,
+      workoutDayId: activeWorkoutLog.workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    if (!exercise) {
+      return res.status(404).json({
+        message: "Exercise not found for this workout",
+      });
+    }
+
+    if (setNumber < 1 || setNumber > exercise.sets) {
+      return res.status(400).json({
+        message: "Invalid set number",
+      });
+    }
+
+    const existingSet = await SetLogs.findOne({
+      userId: loggedInUser._id,
+      workoutLogId,
+      exerciseId,
+      setNumber,
+    });
+
+    if (existingSet && !existingSet.completedAt) {
+      return res.status(200).json({
+        message: "Resuming set",
+        setLog: existingSet,
+        resume: true,
+      });
+    }
+
+    if (existingSet && existingSet.completedAt) {
+      return res.status(409).json({
+        message: "Set already completed",
+      });
+    }
+
+    const activeSet = await SetLogs.findOne({
+      workoutLogId,
+      userId: loggedInUser._id,
+      completedAt: { $exists: false },
+    });
+
+    if (activeSet) {
+      return res.status(409).json({
+        message: "Another set is already in progress",
+      });
+    }
+
+    const newSetLog = await SetLogs.create({
+      userId: loggedInUser._id,
+      workoutLogId,
+      exerciseId,
+      setNumber,
+      startedAt: new Date(),
+      pausedAt: null,
+      totalPausedDuration: 0,
+    });
+
+    return res.status(201).json({
+      message: "Set started successfully",
+      setLog: newSetLog,
+      resume: false,
+    });
+  } catch (err) {
+    res.status(400).send("ERROR : inside /workout/set/start " + err.message);
+  }
 });
 
-workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req,res) => {
+workoutExecutionRouter.post("/workout/set/complete", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const { workoutLogId, exerciseId, setNumber } = req.body;
 
-    try {
+    const activeWorkoutLog = await WorkoutLog.findOne({
+      _id: workoutLogId,
+      userId: loggedInUser._id,
+      status: "in_progress",
+    });
 
-        const loggedInUser = req.user;
-        const {workoutLogId, exerciseId, setNumber} = req.body;
-
-        // flow of /workout/set/complete
-        /*
-        1: Validate workoutLog is active
-        2: Validate exercise belongs to workout
-        3: Validate setNumber range
-        4: Find the active set
-        5: Calculate time taken
-        6: complete the set
-        7: Update workout progress
-        */
-
-        // 1 Validate workout is active 
-        const activeWorkoutLog = await WorkoutLog.findOne({
-            _id: workoutLogId,
-            userId: loggedInUser._id,
-            status: "in_progress"
-        });
-
-
-        if(!activeWorkoutLog) {
-            return res.status(404).json({
-                 message: "!No active workout!!" 
-            });
-        }
-
-        // 2 Validate exercise belongs to workout
-        const exercise = await Exercises.findOne({
-            _id: exerciseId,
-            workoutDayId: activeWorkoutLog.workoutDayId,
-            userId: loggedInUser._id
-        });
-
-        if(!exercise) {
-            return res.status(404).json({
-                 message: "!Exercise is not found for active workout Log!!" 
-            });
-        }
-
-        // 3️ Validate setNumber range
-        if (setNumber < 1 || setNumber > exercise.sets) {
-            return res.status(400).json({
-                message: "Invalid set number"
-            });
-        }
-
-        // 4 Find the active set
-        const setLog = await SetLogs.findOne({
-            userId: loggedInUser._id,
-            workoutLogId: activeWorkoutLog._id,
-            exerciseId: exercise._id,
-            setNumber: setNumber,
-        });
-
-        // Case 1 — Set Not Started Yet
-        if (!setLog) {
-            return res.status(404).json({
-                message: "Set not started yet"
-            })
-        }
-        
-        // Case 2 — Set Already Completed
-        if (setLog.completedAt) {
-            return res.status(409).json({
-                message: "Set already completed"
-            });
-        }
-
-        // 5 Calculate time taken
-        const now = new Date();
-
-        const timeTaken = Math.floor((now - setLog.startedAt) / 1000);
-
-        setLog.completedAt = now;
-        setLog.timeTaken = timeTaken;
-
-        // 6 update setLog
-        await setLog.save();
-
-        // 7 update workout progress
-        await WorkoutLog.findByIdAndUpdate(
-            workoutLogId,
-            {$inc: { totalSetsCompleted: 1}}
-        );
-
-        return res.status(200).json({
-            message: "Set completed successfully",
-            setLog
-        });
-
-    } catch(err){
-
-        res.status(400).send("ERROR inside /workout/set/complete : "+ err.message);
+    if (!activeWorkoutLog) {
+      return res.status(404).json({
+        message: "No active workout or workout is paused",
+      });
     }
 
+    const exercise = await Exercises.findOne({
+      _id: exerciseId,
+      workoutDayId: activeWorkoutLog.workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    if (!exercise) {
+      return res.status(404).json({
+        message: "Exercise not found for active workout",
+      });
+    }
+
+    if (setNumber < 1 || setNumber > exercise.sets) {
+      return res.status(400).json({
+        message: "Invalid set number",
+      });
+    }
+
+    const setLog = await SetLogs.findOne({
+      userId: loggedInUser._id,
+      workoutLogId: activeWorkoutLog._id,
+      exerciseId: exercise._id,
+      setNumber,
+    });
+
+    if (!setLog) {
+      return res.status(404).json({
+        message: "Set not started yet",
+      });
+    }
+
+    if (setLog.completedAt) {
+      return res.status(409).json({
+        message: "Set already completed",
+      });
+    }
+
+    const now = new Date();
+
+    // Accurate set time excludes all paused duration
+    const timeTaken = getSetDurationExcludingPause(setLog, now);
+
+    setLog.completedAt = now;
+    setLog.timeTaken = timeTaken;
+    setLog.pausedAt = null;
+
+    await setLog.save();
+
+    await WorkoutLog.findByIdAndUpdate(workoutLogId, {
+      $inc: { totalSetsCompleted: 1 },
+    });
+
+    return res.status(200).json({
+      message: "Set completed successfully",
+      setLog,
+    });
+  } catch (err) {
+    res.status(400).send("ERROR inside /workout/set/complete : " + err.message);
+  }
 });
 
 workoutExecutionRouter.post("/workout/complete", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const { workoutLogId } = req.body;
 
-    try {
+    // Business rule: workout can only be completed if all planned sets are done.
+    const activeWorkoutLog = await WorkoutLog.findOne({
+      _id: workoutLogId,
+      userId: loggedInUser._id,
+      status: { $in: ["in_progress", "paused"] },
+    });
 
-        // STEP 1: Get logged-in user and workoutLogId from request
-        const loggedInUser = req.user;
-        const { workoutLogId } = req.body;
-
-
-        // STEP 2: Validate that the workout is currently active
-        // Only an "in_progress" workout can be completed
-        const activeWorkoutLog = await WorkoutLog.findOne({
-            _id: workoutLogId,
-            userId: loggedInUser._id,
-            status: "in_progress"
-        });
-
-        // If no active workout found → return error
-        if (!activeWorkoutLog) {
-            return res.status(404).json({
-                message: "No active workout found"
-            });
-        }
-
-
-        // STEP 3: Get current time (this will be used for completion and duration)
-        const now = new Date();
-
-
-        // STEP 4: Find any sets that were started but never completed
-        // These sets must be automatically finished when workout completes
-        const runningSets = await SetLogs.find({
-            workoutLogId: workoutLogId,
-            userId: loggedInUser._id,
-            completedAt: { $exists: false }
-        });
-
-
-        // STEP 5: Complete all unfinished sets
-        for (const set of runningSets) {
-
-            // Calculate time taken for the set
-            const timeTaken = Math.floor((now - set.startedAt) / 1000);
-
-            // Update set fields
-            set.completedAt = now;
-            set.timeTaken = timeTaken;
-
-            // Save updated set
-            await set.save();
-        }
-
-
-        // STEP 6: Calculate total workout duration
-        // Duration = current time - workout start time in sec
-        const totalDuration = Math.floor(
-            (now - activeWorkoutLog.startedAt) / 1000
-        );
-
-
-        // STEP 7: Update workout log to mark workout as completed
-        activeWorkoutLog.completedAt = now;
-        activeWorkoutLog.totalDuration = totalDuration;
-        activeWorkoutLog.status = "completed";
-
-        await activeWorkoutLog.save();
-
-
-        // STEP 8: Return success response with workout summary
-        return res.status(200).json({
-            message: "Workout completed successfully",
-            workoutLog: activeWorkoutLog
-        });
-
-    } catch (err) {
-
-        res.status(400).json({
-            error: "ERROR inside /workout/complete",
-            message: err.message
-        });
-
+    if (!activeWorkoutLog) {
+      return res.status(404).json({
+        message: "No active workout found",
+      });
     }
 
+    const allExercises = await Exercises.find({
+      workoutDayId: activeWorkoutLog.workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    const totalPlannedSets = allExercises.reduce((sum, exercise) => {
+      return sum + (Number(exercise.sets) || 0);
+    }, 0);
+
+    const completedSetsCount = await SetLogs.countDocuments({
+      workoutLogId: activeWorkoutLog._id,
+      userId: loggedInUser._id,
+      completedAt: { $exists: true },
+    });
+
+    if (completedSetsCount < totalPlannedSets) {
+      return res.status(400).json({
+        message: "Cannot complete workout - not all sets are finished",
+        code: "INCOMPLETE_SETS",
+        totalPlannedSets,
+        completedSetsCount,
+        remainingSets: totalPlannedSets - completedSetsCount,
+      });
+    }
+
+    const now = new Date();
+
+    const runningSets = await SetLogs.find({
+      workoutLogId,
+      userId: loggedInUser._id,
+      completedAt: { $exists: false },
+    });
+
+    for (const set of runningSets) {
+      set.completedAt = now;
+      set.timeTaken = getSetDurationExcludingPause(set, now);
+      set.pausedAt = null;
+      await set.save();
+    }
+
+    activeWorkoutLog.completedAt = now;
+    activeWorkoutLog.totalDuration = getWorkoutDurationExcludingPause(
+      activeWorkoutLog,
+      now,
+    );
+    activeWorkoutLog.status = "completed";
+    activeWorkoutLog.pausedAt = null;
+
+    // Ensure aggregate reflects truth from actual completed set count
+    activeWorkoutLog.totalSetsCompleted = completedSetsCount;
+
+    await activeWorkoutLog.save();
+
+    return res.status(200).json({
+      message: "Workout completed successfully",
+      workoutLog: activeWorkoutLog,
+    });
+  } catch (err) {
+    res.status(400).json({
+      error: "ERROR inside /workout/complete",
+      message: err.message,
+    });
+  }
+});
+
+// Pause whole workout and freeze both workout and active set timers.
+workoutExecutionRouter.post("/workout/pause", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const { workoutLogId } = req.body;
+    const now = new Date();
+
+    const activeWorkout = await WorkoutLog.findOne({
+      _id: workoutLogId,
+      userId: loggedInUser._id,
+      status: "in_progress",
+    });
+
+    if (!activeWorkout) {
+      return res.status(404).json({
+        message: "No active workout found to pause",
+      });
+    }
+
+    // Prevent duplicate pause calls from reopening pause windows incorrectly
+    if (!activeWorkout.pausedAt) {
+      activeWorkout.pausedAt = now;
+    }
+
+    activeWorkout.status = "paused";
+    await activeWorkout.save();
+
+    const activeSet = await SetLogs.findOne({
+      workoutLogId: activeWorkout._id,
+      userId: loggedInUser._id,
+      completedAt: { $exists: false },
+    });
+
+    if (activeSet && !activeSet.pausedAt) {
+      activeSet.pausedAt = now;
+      await activeSet.save();
+    }
+
+    return res.status(200).json({
+      message: "Workout paused successfully",
+      workoutLog: activeWorkout,
+      activeSet: activeSet || null,
+    });
+  } catch (err) {
+    res.status(400).json({
+      error: "ERROR inside /workout/pause",
+      message: err.message,
+    });
+  }
+});
+
+// Resume workout and add paused time into persisted totals for both workout and active set.
+workoutExecutionRouter.post("/workout/resume", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const { workoutLogId } = req.body;
+    const now = new Date();
+
+    const pausedWorkout = await WorkoutLog.findOne({
+      _id: workoutLogId,
+      userId: loggedInUser._id,
+      status: "paused",
+    }).populate("workoutDayId", "title");
+
+    if (!pausedWorkout) {
+      return res.status(404).json({
+        message: "No paused workout found to resume",
+      });
+    }
+
+    if (pausedWorkout.pausedAt) {
+      const pausedSeconds = getSecondsDifference(now, pausedWorkout.pausedAt);
+      pausedWorkout.totalPausedDuration =
+        Number(pausedWorkout.totalPausedDuration || 0) + pausedSeconds;
+    }
+
+    pausedWorkout.pausedAt = null;
+    pausedWorkout.status = "in_progress";
+    await pausedWorkout.save();
+
+    const activeSet = await SetLogs.findOne({
+      workoutLogId: pausedWorkout._id,
+      userId: loggedInUser._id,
+      completedAt: { $exists: false },
+    });
+
+    if (activeSet && activeSet.pausedAt) {
+      const pausedSeconds = getSecondsDifference(now, activeSet.pausedAt);
+      activeSet.totalPausedDuration =
+        Number(activeSet.totalPausedDuration || 0) + pausedSeconds;
+      activeSet.pausedAt = null;
+      await activeSet.save();
+    }
+
+    const exercisesList = await Exercises.find({
+      workoutDayId: pausedWorkout.workoutDayId,
+      userId: loggedInUser._id,
+    });
+
+    const completedSets = await SetLogs.find({
+      workoutLogId: pausedWorkout._id,
+      userId: loggedInUser._id,
+    });
+
+    return res.status(200).json({
+      message: "Workout resumed successfully",
+      workoutLog: pausedWorkout,
+      exercisesList,
+      completedSets,
+      resume: true,
+    });
+  } catch (err) {
+    res.status(400).json({
+      error: "ERROR inside /workout/resume",
+      message: err.message,
+    });
+  }
 });
 
 module.exports = workoutExecutionRouter;
