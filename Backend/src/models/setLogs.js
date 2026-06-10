@@ -53,6 +53,30 @@ setLogsSchema.index(
   { unique: true }
 );
 
+// Prevent multiple active sets inside the same workout.
+//
+// Allowed:
+// Workout -> completed set
+// Workout -> completed set
+// Workout -> one active set
+//
+// Not Allowed:
+// Workout -> active set
+// Workout -> another active set
+//
+// MongoDB becomes the final protection layer
+// against double-clicks, multiple tabs and
+// concurrent requests.
+setLogsSchema.index(
+  { workoutLogId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      completedAt: { $exists: false }
+    }
+  }
+);
+
 const SetLogs = mongoose.model('SetLogs', setLogsSchema);
 
 module.exports = SetLogs;

@@ -31,7 +31,8 @@ const weekdays = [
   "sunday",
 ];
 
-const container = "w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8";
+const container =
+  "w-full max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 xl:px-10 2xl:px-12";
 
 const getTodayKey = () =>
   new Date().toLocaleString("en-US", { weekday: "long" }).toLowerCase();
@@ -85,21 +86,21 @@ const normalizeSchedule = (items = []) =>
   }, {});
 
 const DashboardSkeleton = () => (
-  <section className="min-h-screen bg-base-100 py-6 sm:py-8 lg:py-10">
-    <div className={`${container} space-y-6 lg:space-y-8`}>
-      <div className="skeleton h-32 w-full rounded-box" />
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="skeleton h-[360px] w-full rounded-box" />
-        <div className="skeleton h-[360px] w-full rounded-box" />
+  <section className="min-h-screen bg-base-100 py-4 sm:py-6 lg:py-8 2xl:py-10">
+    <div className={`${container} space-y-4 sm:space-y-6 lg:space-y-8`}>
+      <div className="skeleton h-28 sm:h-32 w-full rounded-box" />
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="skeleton h-[320px] sm:h-[360px] xl:h-[400px] w-full rounded-box" />
+        <div className="skeleton h-[320px] sm:h-[360px] xl:h-[400px] w-full rounded-box" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {[1, 2, 3, 4].map((item) => (
-          <div key={item} className="skeleton h-32 rounded-box" />
+          <div key={item} className="skeleton h-28 sm:h-32 rounded-box" />
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="skeleton h-[420px] rounded-box" />
-        <div className="skeleton h-[420px] rounded-box" />
+        <div className="skeleton h-[360px] sm:h-[420px] rounded-box" />
+        <div className="skeleton h-[360px] sm:h-[420px] rounded-box" />
       </div>
     </div>
   </section>
@@ -117,39 +118,39 @@ const EmptyDashboardState = ({
   ];
 
   return (
-    <section className="min-h-screen bg-base-100 py-8 sm:py-10 lg:py-12">
+    <section className="min-h-screen bg-base-100 py-6 sm:py-8 lg:py-10 2xl:py-12">
       <div className={`${container} flex min-h-[72vh] items-center`}>
         <div className="w-full overflow-hidden rounded-box border border-base-300 bg-base-200 shadow-xl">
-          <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="flex min-h-[280px] items-center justify-center bg-primary p-8 text-primary-content sm:min-h-[340px] lg:min-h-full">
-              <div className="relative grid aspect-square w-full max-w-xs place-items-center rounded-full border border-primary-content/30">
-                <div className="absolute inset-8 rounded-full border border-primary-content/20" />
-                <Dumbbell size={86} strokeWidth={1.5} />
+          <div className="grid xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="flex min-h-[220px] sm:min-h-[300px] xl:min-h-full items-center justify-center bg-primary p-6 sm:p-8 lg:p-10 text-primary-content">
+              <div className="relative grid aspect-square w-full max-w-[220px] sm:max-w-[260px] lg:max-w-xs place-items-center rounded-full border border-primary-content/30">
+                <div className="absolute inset-6 sm:inset-8 rounded-full border border-primary-content/20" />
+                <Dumbbell size={72} strokeWidth={1.5} className="sm:w-[86px] sm:h-[86px]" />
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 lg:p-10">
-              <span className="badge badge-primary badge-outline mb-5">
+            <div className="p-5 sm:p-8 lg:p-10 2xl:p-12">
+              <span className="badge badge-primary badge-outline mb-4 sm:mb-5">
                 Setup required
               </span>
 
-              <h1 className="max-w-xl text-3xl font-black tracking-tight sm:text-4xl">
+              <h1 className="max-w-xl text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-black tracking-tight">
                 Your workout system isn&apos;t ready yet
               </h1>
 
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-base-content/70">
+              <p className="mt-4 max-w-2xl text-sm sm:text-base lg:text-lg leading-relaxed text-base-content/70">
                 Create workout days, add exercises, and assign them to weekdays
                 before starting your training journey.
               </p>
 
-              <div className="mt-8 grid gap-3">
+              <div className="mt-6 sm:mt-8 grid gap-3 sm:gap-4">
                 {checklist.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-3 rounded-box border border-base-300 bg-base-100 p-4"
+                    className="flex items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3.5 sm:p-4"
                   >
                     <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                      className={`grid h-9 w-9 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full ${
                         item.done
                           ? "bg-success text-success-content"
                           : "bg-base-300 text-base-content/50"
@@ -157,12 +158,14 @@ const EmptyDashboardState = ({
                     >
                       <CheckCircle2 size={18} />
                     </span>
-                    <span className="font-semibold">{item.label}</span>
+                    <span className="font-semibold text-sm sm:text-base">
+                      {item.label}
+                    </span>
                   </div>
                 ))}
               </div>
 
-              <Link to="/planner" className="btn btn-primary btn-lg mt-8">
+              <Link to="/planner" className="btn btn-primary btn-md sm:btn-lg mt-6 sm:mt-8 w-full sm:w-auto">
                 Go To Planner
                 <ArrowRight size={18} />
               </Link>
@@ -183,7 +186,9 @@ const DashboardHero = ({
 }) => {
   const hasActive = Boolean(activeSession);
   const workoutTitle = hasActive
-    ? activeSession?.workoutLog?.workoutDayId?.title || activeSession?.workoutLog?.workoutDay?.title || "Active Workout"
+    ? activeSession?.workoutLog?.workoutDayId?.title ||
+      activeSession?.workoutLog?.workoutDay?.title ||
+      "Active Workout"
     : suggestion?.workoutDay;
   const hasWorkout = hasActive || Boolean(suggestion?.workoutDay);
 
@@ -193,10 +198,10 @@ const DashboardHero = ({
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-accent animate-pulse" />
       )}
 
-      <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
+      <div className="grid gap-0 2xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="p-5 sm:p-6 lg:p-8 2xl:p-10 flex flex-col justify-between">
           <div>
-            <div className="mb-5 flex flex-wrap items-center gap-2">
+            <div className="mb-4 sm:mb-5 flex flex-wrap items-center gap-2">
               {hasActive ? (
                 <>
                   <span className="badge badge-error gap-1.5 animate-pulse">
@@ -219,28 +224,30 @@ const DashboardHero = ({
               )}
             </div>
 
-            <h2 className="text-3xl font-black tracking-tight sm:text-5xl lg:text-6xl text-base-content">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl 2xl:text-6xl font-black tracking-tight text-base-content leading-tight">
               {hasWorkout ? titleCase(workoutTitle) : "Rest Day"}
             </h2>
 
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-base-content/70 sm:text-base lg:text-lg">
+            <p className="mt-4 max-w-3xl text-sm sm:text-base lg:text-lg 2xl:text-xl leading-relaxed text-base-content/70">
               {hasActive
                 ? `Your session for ${titleCase(workoutTitle)} is active. Resume the workout now to complete your sets and track your progress.`
                 : hasWorkout
-                ? `${formatWeekday(
-                    suggestion?.weekday,
-                  )} is ready. Open the session when you are set to train and keep momentum on your side.`
-                : "No workout scheduled today. Use the time to recover, stretch, or prepare for your next training session."}
+                  ? `${formatWeekday(
+                      suggestion?.weekday,
+                    )} is ready. Open the session when you are set to train and keep momentum on your side.`
+                  : "No workout scheduled today. Use the time to recover, stretch, or prepare for your next training session."}
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
             {hasWorkout && (
               <button
                 type="button"
                 onClick={onStartWorkout}
-                disabled={isStarting || (!hasActive && !todaySchedule?.workoutDayId)}
-                className={`btn btn-lg ${hasActive ? 'btn-error' : 'btn-primary'}`}
+                disabled={
+                  isStarting || (!hasActive && !todaySchedule?.workoutDayId)
+                }
+                className={`btn btn-md sm:btn-lg ${hasActive ? "btn-error" : "btn-primary"} w-full sm:w-auto`}
               >
                 {isStarting ? (
                   <span className="loading loading-spinner loading-sm" />
@@ -251,33 +258,39 @@ const DashboardHero = ({
               </button>
             )}
 
-            <Link to="/planner" className="btn btn-secondary btn-lg">
+            <Link to="/planner" className="btn btn-secondary btn-md sm:btn-lg w-full sm:w-auto">
               Open Planner
               <LayoutList size={18} />
             </Link>
           </div>
         </div>
 
-        <div className="flex min-h-[260px] items-center justify-center bg-base-300/40 p-6 sm:p-8 border-t lg:border-t-0 lg:border-l border-base-300">
-          <div className="grid w-full max-w-md gap-4">
-            <div className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+        <div className="flex min-h-[220px] sm:min-h-[240px] lg:min-h-[260px] items-center justify-center bg-base-300/40 p-5 sm:p-6 lg:p-8 border-t 2xl:border-t-0 2xl:border-l border-base-300">
+          <div className="grid w-full max-w-xl 2xl:max-w-md gap-4">
+            <div className="rounded-box border border-base-300 bg-base-100 p-4 sm:p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <span className={`grid h-12 w-12 place-items-center rounded-full text-primary-content ${hasActive ? 'bg-error text-error-content animate-pulse' : 'bg-primary'}`}>
+                <span
+                  className={`grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-full text-primary-content ${hasActive ? "bg-error text-error-content animate-pulse" : "bg-primary"}`}
+                >
                   <Sparkles size={20} />
                 </span>
                 <div>
                   <p className="text-sm text-base-content/60">Status</p>
-                  <h3 className="text-xl font-black">
-                    {hasActive ? "Active Session" : hasWorkout ? "Ready To Train" : "Recovery Mode"}
+                  <h3 className="text-lg sm:text-xl font-black">
+                    {hasActive
+                      ? "Active Session"
+                      : hasWorkout
+                        ? "Ready To Train"
+                        : "Recovery Mode"}
                   </h3>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+            <div className="rounded-box border border-base-300 bg-base-100 p-4 sm:p-5 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-base-content/60">Selected</span>
-                <span className="font-bold">
+                <span className="font-bold text-sm sm:text-base text-right">
                   {hasWorkout ? titleCase(workoutTitle) : "Rest Day"}
                 </span>
               </div>
@@ -286,7 +299,7 @@ const DashboardHero = ({
 
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-base-content/60">Weekday</span>
-                <span className="font-bold">
+                <span className="font-bold text-sm sm:text-base text-right">
                   {formatWeekday(suggestion?.weekday || getTodayKey())}
                 </span>
               </div>
@@ -303,18 +316,20 @@ const StatCard = ({ title, value, icon, delay }) => (
     initial={{ opacity: 0, y: 15 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, delay }}
-    className="rounded-box border border-base-300 bg-base-200 p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/50 relative overflow-hidden group"
+    className="rounded-box border border-base-300 bg-base-200 p-4 sm:p-5 lg:p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/50 relative overflow-hidden group min-h-[120px]"
   >
     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none" />
     <div className="flex items-start justify-between gap-4 relative z-10">
       <div className="min-w-0">
-        <p className="text-xs text-base-content/60 font-semibold tracking-wide uppercase">{title}</p>
-        <p className="mt-3 truncate text-2xl font-black sm:text-3xl text-base-content tracking-tight">
+        <p className="text-[11px] sm:text-xs text-base-content/60 font-semibold tracking-wide uppercase">
+          {title}
+        </p>
+        <p className="mt-3 truncate text-xl sm:text-2xl lg:text-3xl font-black text-base-content tracking-tight">
           {value || "Not yet"}
         </p>
       </div>
 
-      <span className="grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-content shrink-0 transition duration-300 group-hover:scale-110">
+      <span className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-full bg-primary text-primary-content shrink-0 transition duration-300 group-hover:scale-110">
         {icon}
       </span>
     </div>
@@ -322,7 +337,7 @@ const StatCard = ({ title, value, icon, delay }) => (
 );
 
 const DashboardStats = ({ history, lastWorkout }) => (
-  <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
     <StatCard
       title="Total Workouts"
       value={history.length}
@@ -356,12 +371,12 @@ const WeeklySchedule = ({ scheduleByDay }) => {
   const today = getTodayKey();
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-200 p-5 shadow-xl sm:p-6">
+    <section className="rounded-box border border-base-300 bg-base-200 p-4 sm:p-5 lg:p-6 shadow-xl">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <CalendarDays className="text-primary" size={22} />
           <div>
-            <h2 className="text-2xl font-black">Weekly Schedule</h2>
+            <h2 className="text-xl sm:text-2xl font-black">Weekly Schedule</h2>
             <p className="text-sm text-base-content/60">
               Your planned training rhythm for the week.
             </p>
@@ -373,7 +388,6 @@ const WeeklySchedule = ({ scheduleByDay }) => {
         </span>
       </div>
 
-      {/* Mobile stacked cards */}
       <div className="grid gap-3 sm:hidden">
         {weekdays.map((day) => {
           const item = scheduleByDay[day];
@@ -412,8 +426,7 @@ const WeeklySchedule = ({ scheduleByDay }) => {
         })}
       </div>
 
-      {/* Tablet/Desktop responsive grid */}
-      <div className="hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
+      <div className="hidden sm:grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3">
         {weekdays.map((day) => {
           const item = scheduleByDay[day];
           const isToday = day === today;
@@ -421,14 +434,16 @@ const WeeklySchedule = ({ scheduleByDay }) => {
           return (
             <div
               key={day}
-              className={`rounded-box border p-4 transition duration-300 hover:-translate-y-1 hover:shadow-md ${
+              className={`rounded-box border p-4 transition duration-300 hover:-translate-y-1 hover:shadow-md min-h-[150px] ${
                 isToday
                   ? "border-primary bg-primary text-primary-content shadow-lg"
                   : "border-base-300 bg-base-100"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-black">{formatWeekday(day)}</p>
+                <p className="font-black text-sm sm:text-base">
+                  {formatWeekday(day)}
+                </p>
                 {isToday && <span className="badge badge-neutral">Today</span>}
               </div>
 
@@ -445,7 +460,7 @@ const WeeklySchedule = ({ scheduleByDay }) => {
                   Workout
                 </p>
                 <p
-                  className={`mt-2 text-lg font-bold leading-tight ${
+                  className={`mt-2 text-base lg:text-lg font-bold leading-tight break-words ${
                     isToday ? "text-primary-content" : "text-base-content"
                   }`}
                 >
@@ -464,11 +479,11 @@ const RecentActivity = ({ history }) => {
   const recent = history.slice(0, 5);
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-200 p-5 shadow-xl sm:p-6">
+    <section className="rounded-box border border-base-300 bg-base-200 p-4 sm:p-5 lg:p-6 shadow-xl">
       <div className="mb-5 flex items-center gap-3">
         <History className="text-primary" size={22} />
         <div>
-          <h2 className="text-2xl font-black">Recent Activity</h2>
+          <h2 className="text-xl sm:text-2xl font-black">Recent Activity</h2>
           <p className="text-sm text-base-content/60">
             Latest completed workout logs.
           </p>
@@ -476,7 +491,7 @@ const RecentActivity = ({ history }) => {
       </div>
 
       {recent.length === 0 ? (
-        <div className="rounded-box border border-dashed border-base-300 bg-base-100 p-8 text-center">
+        <div className="rounded-box border border-dashed border-base-300 bg-base-100 p-6 sm:p-8 text-center">
           <Timer className="mx-auto text-base-content/40" size={34} />
           <p className="mt-3 font-semibold">No completed workouts yet</p>
           <p className="mt-1 text-sm text-base-content/60">
@@ -488,16 +503,16 @@ const RecentActivity = ({ history }) => {
           {recent.map((item, index) => (
             <div
               key={`${item?.workoutDay}-${item?.date}-${index}`}
-              className="flex gap-4 rounded-box border border-base-300 bg-base-100 p-4"
+              className="flex gap-3 sm:gap-4 rounded-box border border-base-300 bg-base-100 p-3.5 sm:p-4"
             >
               <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success text-success-content">
                 <CheckCircle2 size={18} />
               </span>
 
               <div className="min-w-0 flex-1">
-                <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-start">
-                  <h3 className="font-bold">{titleCase(item?.workoutDay)}</h3>
-                  <span className="text-sm text-base-content/60">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <h3 className="font-bold break-words">{titleCase(item?.workoutDay)}</h3>
+                  <span className="text-sm text-base-content/60 shrink-0">
                     {formatDate(item?.date)}
                   </span>
                 </div>
@@ -525,11 +540,11 @@ const InsightCard = ({ suggestion, history }) => {
   const today = formatWeekday(getTodayKey());
 
   return (
-    <section className="rounded-box border border-base-300 bg-base-200 p-5 shadow-xl sm:p-6">
+    <section className="rounded-box border border-base-300 bg-base-200 p-4 sm:p-5 lg:p-6 shadow-xl h-full">
       <div className="mb-5 flex items-center gap-3">
         <TrendingUp className="text-primary" size={22} />
         <div>
-          <h2 className="text-2xl font-black">Quick Insights</h2>
+          <h2 className="text-xl sm:text-2xl font-black">Quick Insights</h2>
           <p className="text-sm text-base-content/60">
             Small signals that keep you moving.
           </p>
@@ -539,7 +554,7 @@ const InsightCard = ({ suggestion, history }) => {
       <div className="grid gap-3">
         <div className="rounded-box border border-base-300 bg-base-100 p-4">
           <p className="text-sm text-base-content/60">Today</p>
-          <p className="mt-1 font-bold">
+          <p className="mt-1 font-bold break-words">
             {suggestion?.workoutDay
               ? `${today}: ${titleCase(suggestion.workoutDay)}`
               : `${today}: Rest Day`}
@@ -548,7 +563,7 @@ const InsightCard = ({ suggestion, history }) => {
 
         <div className="rounded-box border border-base-300 bg-base-100 p-4">
           <p className="text-sm text-base-content/60">Consistency</p>
-          <p className="mt-1 font-bold">
+          <p className="mt-1 font-bold break-words">
             {totalWorkouts > 0
               ? `${totalWorkouts} workouts logged so far`
               : "No workouts logged yet"}
@@ -557,7 +572,7 @@ const InsightCard = ({ suggestion, history }) => {
 
         <div className="rounded-box border border-base-300 bg-base-100 p-4">
           <p className="text-sm text-base-content/60">Last Session</p>
-          <p className="mt-1 font-bold">
+          <p className="mt-1 font-bold break-words">
             {latest?.workoutDay
               ? `${titleCase(latest.workoutDay)} • ${formatDate(latest.date)}`
               : "No recent session"}
@@ -591,26 +606,27 @@ const Dashboard = () => {
     setError("");
 
     try {
-      const [suggestion, last, history, schedule, days, active] = await Promise.all([
-        axios.get(`${BASE_URL}/workout/suggestion`, {
-          withCredentials: true,
-        }),
-        axios.get(`${BASE_URL}/workout/last`, {
-          withCredentials: true,
-        }),
-        axios.get(`${BASE_URL}/workout/history`, {
-          withCredentials: true,
-        }),
-        axios.get(`${BASE_URL}/schedule/view`, {
-          withCredentials: true,
-        }),
-        axios.get(`${BASE_URL}/workout/days`, {
-          withCredentials: true,
-        }),
-        axios.get(`${BASE_URL}/workout/active`, {
-          withCredentials: true,
-        }),
-      ]);
+      const [suggestion, last, history, schedule, days, active] =
+        await Promise.all([
+          axios.get(`${BASE_URL}/workout/suggestion`, {
+            withCredentials: true,
+          }),
+          axios.get(`${BASE_URL}/workout/last`, {
+            withCredentials: true,
+          }),
+          axios.get(`${BASE_URL}/workout/history`, {
+            withCredentials: true,
+          }),
+          axios.get(`${BASE_URL}/schedule/view`, {
+            withCredentials: true,
+          }),
+          axios.get(`${BASE_URL}/workout/days`, {
+            withCredentials: true,
+          }),
+          axios.get(`${BASE_URL}/workout/active`, {
+            withCredentials: true,
+          }),
+        ]);
 
       const workoutDays = days?.data?.data || [];
 
@@ -738,6 +754,26 @@ const Dashboard = () => {
     );
   }
 
+  if (error) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+
+        <section className="min-h-screen bg-base-100 py-8">
+          <div className={`${container}`}>
+            <div className="alert alert-error">
+              <span>{error}</span>
+            </div>
+
+            <button onClick={fetchDashboard} className="btn btn-primary mt-4">
+              Retry
+            </button>
+          </div>
+        </section>
+      </>
+    );
+  }
+
   if (!isSetupComplete) {
     return (
       <>
@@ -766,8 +802,8 @@ const Dashboard = () => {
                 {titleCase(user?.firstName || "Athlete")}
               </h1>
               <p className="mt-3 max-w-2xl text-sm text-base-content/65 sm:text-base">
-                Stay close to the plan, complete the work, and let consistency do
-                the compounding.
+                Stay close to the plan, complete the work, and let consistency
+                do the compounding.
               </p>
             </div>
 

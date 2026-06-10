@@ -66,6 +66,33 @@ workoutLogsSchema.index({ userId: 1, status: 1 });
 // Helpful for checking whether same workout day was completed on a given day
 workoutLogsSchema.index({ userId: 1, workoutDayId: 1, date: 1, status: 1 });
 
+// Prevent a user from having multiple active workouts.
+// MongoDB enforces this rule even if two requests hit
+// the server at the exact same time.
+//
+// Allowed:
+// User -> completed workout
+// User -> completed workout
+// User -> in_progress workout
+//
+// NOT Allowed:
+// User -> in_progress workout
+// User -> another in_progress workout
+//
+// Also blocks:
+// paused + in_progress together
+workoutLogsSchema.index(
+  { userId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: {
+        $in: ["in_progress", "paused"]
+      }
+    }
+  }
+);
+
 const WorkoutLog = mongoose.model('WorkoutLog', workoutLogsSchema);
 
 module.exports = WorkoutLog;

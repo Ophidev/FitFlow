@@ -79,6 +79,7 @@ const WorkoutSession = () => {
     isComplete: false,
   });
 
+  const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
   const [summary, setSummary] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
 
@@ -126,6 +127,14 @@ const WorkoutSession = () => {
         typeof active?.exerciseId === "object"
           ? String(active?.exerciseId?._id || "")
           : String(active?.exerciseId || "");
+
+      const exerciseIndex = list.findIndex(
+        (exercise) => String(exercise?._id) === activeExerciseId,
+      );
+
+      if (exerciseIndex >= 0) {
+        setActiveExerciseIndex(exerciseIndex);
+      }
 
       setActiveSet({
         setLogId: active?._id,
@@ -209,7 +218,8 @@ const WorkoutSession = () => {
     : 0;
 
   const remainingSets = Math.max(0, totalSets - completedSetCount);
-  const canCompleteWorkout = totalSets > 0 && completedSetCount === totalSets;
+  const canCompleteWorkout =
+    !isWorkoutCompleted && completedSetCount === totalSets;
 
   const activeExercise = exercisesList[activeExerciseIndex];
 
@@ -528,14 +538,21 @@ const WorkoutSession = () => {
     try {
       setIsResumingWorkout(true);
 
-      const response = await axios.post(
+      await axios.post(
         `${BASE_URL}/workout/resume`,
         { workoutLogId },
         { withCredentials: true },
       );
 
-      if (response?.data?.workoutLog) {
-        initializeSessionStates(response.data);
+      // After resume, fetch the full active session.
+      // /workout/active returns the complete payload
+      // required by initializeSessionStates().
+      const activeResponse = await axios.get(`${BASE_URL}/workout/active`, {
+        withCredentials: true,
+      });
+
+      if (activeResponse?.data?.workoutLog) {
+        initializeSessionStates(activeResponse.data);
       }
 
       toast.success("Workout resumed");
@@ -581,6 +598,7 @@ const WorkoutSession = () => {
         totalExercises: exercisesList.length,
       });
 
+      setIsWorkoutCompleted(true);
       setShowSummaryModal(true);
       toast.success("Workout completed");
     } catch (error) {
@@ -593,8 +611,7 @@ const WorkoutSession = () => {
 
   const canStartSet = (exercise, exerciseIndex, setNumber) => {
     const previousSetComplete =
-      setNumber === 1 ||
-      completedSets[getSetKey(exercise?._id, setNumber - 1)];
+      setNumber === 1 || completedSets[getSetKey(exercise?._id, setNumber - 1)];
 
     return (
       !activeSet &&
@@ -736,8 +753,8 @@ const WorkoutSession = () => {
                 {!canCompleteWorkout && totalSets > 0 && (
                   <p className="mt-2 flex items-center gap-2 text-sm text-warning">
                     <AlertCircle size={16} />
-                    {remainingSets} set{remainingSets === 1 ? "" : "s"} remaining
-                    before workout completion.
+                    {remainingSets} set{remainingSets === 1 ? "" : "s"}{" "}
+                    remaining before workout completion.
                   </p>
                 )}
               </div>
@@ -781,7 +798,8 @@ const WorkoutSession = () => {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-2xl font-black">
-                        {exercise?.exerciseName || `Exercise ${exerciseIndex + 1}`}
+                        {exercise?.exerciseName ||
+                          `Exercise ${exerciseIndex + 1}`}
                       </h2>
 
                       {exerciseComplete && (
@@ -1028,7 +1046,12 @@ const WorkoutSession = () => {
                 <button
                   type="button"
                   onClick={handlePauseWorkout}
-                  disabled={isPausingWorkout || isCompletingWorkout}
+                  disabled={
+                    isPausingWorkout ||
+                    isCompletingWorkout ||
+                    isStartingSet ||
+                    isCompletingSet
+                  }
                   className="btn btn-outline w-full"
                 >
                   {isPausingWorkout ? (
@@ -1066,9 +1089,7 @@ const WorkoutSession = () => {
             <button
               type="button"
               onClick={handleCompleteWorkout}
-              disabled={
-                isCompletingWorkout || isWorkoutPaused || !canCompleteWorkout
-              }
+              disabled={isCompletingWorkout || isWorkoutCompleted}
               className="btn btn-success btn-lg"
             >
               {isCompletingWorkout ? (
@@ -1125,14 +1146,6 @@ const WorkoutSession = () => {
             </div>
 
             <div className="modal-action">
-              <button
-                type="button"
-                onClick={() => setShowSummaryModal(false)}
-                className="btn btn-ghost"
-              >
-                Close
-              </button>
-
               <button
                 type="button"
                 onClick={() => navigate("/dashboard")}
