@@ -6,13 +6,15 @@ const cors = require("cors");
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  process.env.PROD_FRONTEND_URL, // frotnend production link
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173", // local dev
-    ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    credentials: true, // allows cookies and headers
+    origin: allowedOrigins,
+    credentials: true,
   })
 );
 
