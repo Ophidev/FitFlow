@@ -8,7 +8,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173", // local dev
-  process.env.PROD_FRONTEND_URL, // frotnend production link
+  process.env.PROD_FRONTEND_URL, // frontend production link
 ].filter(Boolean);
 
 app.use(
