@@ -4,8 +4,8 @@ const User = require("../models/user.js");
 const userAuth = async (req, res, next) => {
 
   try {
-    console.log(req);
-    console.log(req.cookies);
+    console.log("Cookies:", req.cookies);
+    console.log("Token:", req.cookies?.token);
     const { token } = req.cookies;
 
     if (!token) {

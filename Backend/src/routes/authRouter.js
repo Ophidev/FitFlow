@@ -25,7 +25,10 @@ authRouter.post("/signup", async (req, res) => {
     const token = jwt.sign({ _id: user?._id }, process.env.JWT_SECRET);
 
     res.cookie("token", token, {
-      expires: new Date(Date.now() + 8 + 3600000), // cookie will expires in 8 hours.
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      expires: new Date(Date.now() + 8 * 3600000),
     });
 
     const savedUser = await user.save();
@@ -56,7 +59,10 @@ authRouter.post("/login", async (req, res) => {
       const token = jwt.sign({ _id: user?._id }, process.env.JWT_SECRET);
 
       res.cookie("token", token, {
-        expires: new Date(Date.now() + 8 + 3600000),
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        expires: new Date(Date.now() + 8 * 3600000),
       });
 
       res.send(sanitizeUser(user));
