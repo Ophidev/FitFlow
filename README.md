@@ -7,6 +7,10 @@
 > **Elevate your fitness journey, one rep at a time!**  
 > FitFlow is a modern **MERN Stack** web application designed to help you plan workouts, track your progress, and stay motivated on your path to a healthier lifestyle 🚀💪.
 
+<p align="center">
+  <b>🔗 <a href="https://fitflow-flame.vercel.app/">Live Demo: fitflow-flame.vercel.app</a></b>
+</p>
+
 ---
 
 ## 🚧 Status: Ongoing Project
@@ -151,6 +155,13 @@ npm run dev
 
 * Frontend → `http://localhost:5173`
 * Backend → `http://localhost:5000`
+
+---
+
+## 🌐 Live Demo & Deployment
+
+* **Live Demo:** [https://fitflow-flame.vercel.app/](https://fitflow-flame.vercel.app/)
+* **Frontend Hosting:** Vercel
 
 ---
 
