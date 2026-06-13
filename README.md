@@ -45,6 +45,11 @@
   <img src="screenshots/planner_image.png" alt="FitFlow Planner Preview" width="800" style="border-radius:15px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 1px solid #e5e7eb;"/>
 </p>
 
+### ⌛ Live Workout Session Of Workout Day
+<p align="center">
+  <!-- TODO: Replace src with actual Planner Image path -->
+  <img src="screenshots/live_workout_image.png" alt="FitFlow Planner Preview" width="800" style="border-radius:15px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 1px solid #e5e7eb;"/>
+</p>
 ---
 
 ## 🚀 Tech Stack
