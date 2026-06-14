@@ -1,7 +1,7 @@
 # 🏋️ FitFlow
 
 <p align="center">
-  <img src="Frontend/src/assets/logo.png" style="border-radius:20px" width="120" alt="FitFlow Logo" />
+  <img src="Frontend/src/assets/logo.png" style="border-radius:20px; background-color: white; padding: 10px;" width="120" alt="FitFlow Logo" />
 </p>
 
 > **Elevate your fitness journey, one rep at a time!**  
