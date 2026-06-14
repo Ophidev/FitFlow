@@ -5,7 +5,7 @@
 </p>
 
 > **Elevate your fitness journey, one rep at a time!**  
-> FitFlow is a modern **MERN Stack** web application designed to help you plan workouts, track your progress, and stay motivated on your path to a healthier lifestyle 🚀💪.
+> FitFlow is a modern **MERN Stack** web application designed to help you plan workouts, track your progress, and stay motivated on your path to a healthier lifestyle 💪.
 
 <p align="center">
   <b>🔗 <a href="https://fitflow-flame.vercel.app/">Live Demo: fitflow-flame.vercel.app</a></b>
