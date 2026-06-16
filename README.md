@@ -65,6 +65,10 @@
 ![Express.js](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white&style=for-the-badge)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=for-the-badge)
 
+### 🚀 DevOps / CI/CD
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Jenkins](https://img.shields.io/badge/jenkins-%232C5263.svg?style=for-the-badge&logo=jenkins&logoColor=white)
+
 ---
 
 ## 🧠 Architecture
@@ -167,6 +171,7 @@ npm run dev
 
 * **Live Demo:** [https://fitflow-flame.vercel.app/](https://fitflow-flame.vercel.app/)
 * **Frontend Hosting:** Vercel
+* **Backend Hosting:** Containerized via **Docker** and automated using a **Jenkins** CI/CD pipeline (configured in the root `Jenkinsfile`).
 
 ---
 
