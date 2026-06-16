@@ -21,6 +21,13 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "FitFlow API"
+  });
+});
+
 const authRouter = require("../src/routes/authRouter.js");
 const profileRouter = require("../src/routes/profileRouter.js");
 const workoutDayRouter = require("../src/routes/workoutDayRouter.js");
@@ -40,9 +47,11 @@ app.use("/", historyRouter);
 connectDB()
     .then(() => {
         console.log('✅ Database connected');
+        
+        const PORT = process.env.PORT || 3737;
 
-        app.listen(process.env.PORT, () => {
-            console.log(`Server running on port ${process.env.PORT}`);
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
         })
     })
     .catch((error) => {
