@@ -24,6 +24,7 @@ const AuthLoader = () => {
       try {
         const res = await axios.get(BASE_URL + "/profile/view", {
           withCredentials: true,
+          timeout: 15000,
         });
 
         dispatch(addUser(res.data));
@@ -32,6 +33,7 @@ const AuthLoader = () => {
           dispatch(removeUser());
         } else {
           console.error("Session restore failed:", err.message);
+          dispatch(removeUser());
         }
       } finally {
         setLoading(false);
