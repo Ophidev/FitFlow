@@ -5,9 +5,12 @@ import { Link, useNavigate } from "react-router";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { removeUser } from "../redux/userSlice";
+import { setTheme } from "../redux/themeSlice";
+import { THEME_OPTIONS } from "../utils/themeOptions";
 
 const Header = () => {
   const user = useSelector((state) => state.user);
+  const theme = useSelector((state) => state.theme);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -52,6 +55,20 @@ const Header = () => {
         </div>
       )}
 
+      {/* Theme Selector */}
+      <select
+        value={theme}
+        onChange={(e) => dispatch(setTheme(e.target.value))}
+        className="select select-sm w-auto"
+        aria-label="Select theme"
+      >
+        {THEME_OPTIONS.map((themeOption) => (
+          <option key={themeOption} value={themeOption}>
+            {themeOption}
+          </option>
+        ))}
+      </select>
+
       {/* Avatar Dropdown */}
       {user && (
         <div className="flex-none">
@@ -78,9 +95,6 @@ const Header = () => {
                   Profile
                   <span className="badge">edit</span>
                 </Link>
-              </li>
-              <li>
-                <a>Settings</a>
               </li>
               <li>
                 <a onClick={handleLogout}>Logout</a>
